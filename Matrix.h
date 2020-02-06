@@ -20,6 +20,8 @@ namespace bzx {
     constexpr double PI = 3.1415926;
     constexpr double DMIN = std::numeric_limits<double>::min();
 
+    class Matrix;
+
     // 记录当前矩阵描述信息
     class MatrixDsec {
     public:
@@ -28,10 +30,13 @@ namespace bzx {
             col_size = cs;
             use_Counter = uC;
         }
+        
         size_t row_size = 0;
         size_t col_size = 0;
         size_t use_Counter = 0;   //当作为指针传递时，记录被引用数量
-    };
+        std::vector<Matrix*> memAsyc;
+    };  
+    
 
 
     class Matrix {
@@ -76,7 +81,7 @@ namespace bzx {
         void operator*=(const Matrix& Mat);
         double* operator[](const size_t& index);
         void Clear();
-        void pClear();
+        bool memAsycEqual(const Matrix& Mat);
 
         Matrix& Trans();
         std::tuple<size_t, size_t> shape() const {
@@ -86,30 +91,20 @@ namespace bzx {
             return std::make_tuple(this->MDesc->row_size, this->MDesc->col_size);
         }
 
-        ~Matrix() {
-            if (this->MDesc != NULL) {
-                --MDesc->use_Counter;
-                //std::cout <<MDesc->use_Counter <<" delete!\n";
-                if (MDesc->use_Counter == 0) {
-                    //std::cout << " auto clear!******\n";
-                    for (int i = 0; i < MDesc->row_size; ++i) {
-                        delete[]this->M[i];
-                        this->M[i] = NULL;
-                    }
-                    delete[]this->M;
-                    delete this->MDesc;
-                }
-                this->M = NULL;
-                this->MDesc = NULL;
-            }
-        }
+        ~Matrix();
 
-        //private:
+    private:
         double** M = NULL; // 2d
         MatrixDsec* MDesc = NULL;
 
     };
 
+    
+
+    Matrix::~Matrix() {
+        Clear();
+    }
+    
     /*
         若useCounter计数为0，则释放所属内存;否则，仅将指针置为NULL
     */
@@ -124,6 +119,13 @@ namespace bzx {
                 }
                 delete[]this->M;
                 delete this->MDesc;
+            }
+            for (int i = 0; i < MDesc->memAsyc.size(); ++i) {
+                if (MDesc->memAsyc[i] == this) {
+                    MDesc->memAsyc[i] = MDesc->memAsyc.back();
+                    MDesc->memAsyc.pop_back();
+                    break;
+                }
             }
             this->M = NULL;
             this->MDesc = NULL;
@@ -176,6 +178,7 @@ namespace bzx {
             tmp2[i] = tmp;
         }
         this->M = tmp2;
+        this->MDesc->memAsyc.push_back(this);
         return *this;
     }
 
@@ -188,6 +191,8 @@ namespace bzx {
         Clear(); // 更新useCounter
         this->M = Mat->M;
         this->MDesc = Mat->MDesc;
+        this->MDesc->memAsyc.push_back(this);
+       
         return *this;
     }
 
@@ -371,6 +376,7 @@ namespace bzx {
             }
             this->M[i] = tmp;
         }
+        this->MDesc->memAsyc.push_back(this);
     }
 
     Matrix::Matrix(std::initializer_list<std::initializer_list<double >> src) {
@@ -404,6 +410,7 @@ namespace bzx {
             this->M[i] = tmp;
             ++i;
         }
+        this->MDesc->memAsyc.push_back(this);
     }
 
     /*
@@ -439,6 +446,7 @@ namespace bzx {
             }
             this->M[i] = tmp;
         }
+        this->MDesc->memAsyc.push_back(this);
     }
 
     /*
@@ -887,6 +895,51 @@ namespace bzx {
             }
         }
         return dst;
+    }
+
+    // 拷贝赋值
+    bool Matrix::memAsycEqual(const Matrix& Mat) {
+        // 指向同一内存地址
+        if (this->M == Mat.M) {
+            return true;
+        }
+        
+        size_t R, C;
+        std::tie(R, C) = Mat.shape();
+
+        int i = 0, j = 0;
+        double** tmp2, * tmp;
+        tmp2 = new double* [R];
+        if (tmp2 == NULL) {
+            throw "failed to alloc new memory!\n";
+        }
+
+        for (i = 0; i < R; ++i) {
+            tmp = new double[C];
+            if (tmp == NULL) {
+                throw "failed to alloc new memory!\n";
+            }
+
+            for (j = 0; j + 4 <= C; j += 4) {
+                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.M[i] + j));
+            }
+            while (j < C) {
+                *(tmp + j) = Mat.M[i][j];
+                ++j;
+            }
+            tmp2[i] = tmp;
+        }
+        
+        auto waitDelMat = this->M;
+        std::tie(R, C) = this->shape();
+        for (int i = 0; i < this->MDesc->memAsyc.size(); ++i) {
+            this->MDesc->memAsyc[i]->M = tmp2;
+        }
+        for (int i = 0; i < R; ++i) {
+            delete []waitDelMat[i];
+        }
+        delete[]waitDelMat;
+        return true;
     }
 }
 
