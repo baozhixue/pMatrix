@@ -1,9 +1,9 @@
 //
-// Created by zhixu on 2020/2/5.
+// created by zhixu on 2020/2/5.
 //
 
-#ifndef LALIB_MATRIX_H
-#define LALIB_MATRIX_H
+#ifndef lalib_Matrix_h
+#define lalib_Matrix_h
 
 #include <iostream>
 #include <immintrin.h>
@@ -18,72 +18,68 @@
 namespace bzx {
 
     constexpr double PI = 3.1415926;
-    constexpr double DMIN = std::numeric_limits<double>::min();
+    constexpr double DMIN = std::numeric_limits<double>::min();  // double min
 
     class Matrix;
-
     // 记录当前矩阵描述信息
-    class MatrixDsec {
+    class Matrixdsec {
     public:
-        MatrixDsec(size_t rs, size_t cs, size_t uC) {
+        Matrixdsec(size_t rs, size_t cs, size_t uc) {
             row_size = rs;
             col_size = cs;
-            use_Counter = uC;
+            use_counter = uc;
         }
         
         size_t row_size = 0;
         size_t col_size = 0;
-        size_t use_Counter = 0;   //当作为指针传递时，记录被引用数量
+        size_t use_counter = 0;   //当作为指针传递时，记录被引用数量
         std::vector<Matrix*> memAsyc;
     };  
     
-
-
     class Matrix {
         // double version
-        friend std::ostream& operator<<(std::ostream& out, const Matrix& M);
+        friend std::ostream& operator<<(std::ostream& out, const Matrix& m);
         friend Matrix operator+(const Matrix& Mat, const Matrix& Mat2);
         friend Matrix operator-(const Matrix& Mat, const Matrix& Mat2);
         friend Matrix operator/(const Matrix& Mat, const double& num);
         friend Matrix SQRT(const Matrix& Mat);
         friend double MAX(const Matrix& Mat);
         friend Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // 叉乘
-        friend Matrix dot(const Matrix& Mat, const Matrix& Mat2);
-        friend Matrix dot(const Matrix& Mat, const double& num);
-        friend Matrix inverse(const Matrix& Mat);
-        friend Matrix adjoint_matrix(const Matrix& Mat);
-        friend Matrix diagonal(const Matrix& Mat);
-        friend Matrix diagonal(const size_t& _size, std::initializer_list<double> src);
-        friend Matrix diagonal(const size_t& rs, const size_t& cs, std::initializer_list<double> src);
-        friend Matrix diagonal(const size_t& _size, const Matrix& Mat);
-        friend Matrix diagonal(const size_t& rs, const size_t& cs, const Matrix& Mat);
-        friend Matrix eye(const size_t& _size);
-        friend Matrix eye(const size_t& rs, const size_t& cs);
-        friend Matrix rand_matrix(const size_t& rs, const size_t& cs, const double& Low, const double& high);
-        friend double Determinant(const Matrix& Mat);
-        friend double _Determinant(const Matrix& subMat);
-        friend Matrix transposition(const Matrix& Mat);
+        friend Matrix DOT(const Matrix& Mat, const Matrix& Mat2);
+        friend Matrix DOT(const Matrix& Mat, const double& num);
+        friend Matrix INVERSE(const Matrix& Mat);
+        friend Matrix ADJOINT_Matrix(const Matrix& Mat);
+        friend Matrix DIAGONAL(const Matrix& Mat);
+        friend Matrix DIAGONAL(const size_t& _size, std::initializer_list<double> src);
+        friend Matrix DIAGONAL(const size_t& rs, const size_t& cs, std::initializer_list<double> src);
+        friend Matrix DIAGONAL(const size_t& _size, const Matrix& Mat);
+        friend Matrix DIAGONAL(const size_t& rs, const size_t& cs, const Matrix& Mat);
+        friend Matrix EYE(const size_t& rs, const size_t& cs);
+        friend Matrix EYE(const size_t& _size);
+        friend Matrix RAND_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
+        friend double DETERMINANT(const Matrix& Mat);
+        friend double _DETERMINANT(const Matrix& subMat);
+        friend Matrix TRANSPOSITION(const Matrix& Mat);
         friend std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat);
-        friend std::tuple<Matrix, Matrix> Jacobi(const Matrix& Mat);
-        friend std::tuple<Matrix, Matrix> Eigendecomposition(const Matrix& Mat);
-        friend std::tuple<double, Matrix> Power_method(const Matrix& Mat, const double& min_delta, const size_t& max_iter);
-
+        friend std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat);
+        friend std::tuple<Matrix, Matrix> EigenDec(const Matrix& Mat);
+        friend std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta, const size_t& max_iter);
+        friend bool fast_copy(Matrix& dst, const Matrix& src);
     public:
-        Matrix(const int _row_size, const int _col_size, const double init_num = 0);
+        Matrix(const size_t& _row_size, const size_t& _col_size, const double &init_num=0.0);
         Matrix(std::initializer_list<std::initializer_list<double >> src);
-        Matrix() = default;
+        Matrix() { this->MDesc = new Matrixdsec(0, 0, 1); this->MDesc->memAsyc.push_back(this); };
         Matrix(const Matrix& Mat);
-        Matrix(const Matrix* Mat);
         Matrix& operator=(const Matrix& Mat);
         Matrix& operator=(Matrix* Mat);
         void operator+=(const Matrix& Mat);
         void operator-=(const Matrix& Mat);
         void operator*=(const Matrix& Mat);
         double* operator[](const size_t& index);
-        void Clear();
+        void clear();
         bool memAsycEqual(const Matrix& Mat);
 
-        Matrix& Trans();
+        Matrix& TRANS();
         std::tuple<size_t, size_t> shape() const {
             if (this->MDesc == NULL) {
                 return std::make_tuple(0, 0);
@@ -94,40 +90,40 @@ namespace bzx {
         ~Matrix();
 
     private:
-        double** M = NULL; // 2d
-        MatrixDsec* MDesc = NULL;
+        double** Mat = NULL; // 2d
+        Matrixdsec* MDesc = NULL;
 
     };
 
-    
-
     Matrix::~Matrix() {
-        Clear();
+        clear();
     }
     
     /*
-        若useCounter计数为0，则释放所属内存;否则，仅将指针置为NULL
+        若usecounter计数为0，则释放所属内存;否则，仅将指针置为NULL
     */
-    void Matrix::Clear() {
+    void Matrix::clear() {
+        std::cout << "ready clear!\n";
         if (this->MDesc != NULL) {
-            --MDesc->use_Counter;
-            if (MDesc->use_Counter == 0) {
+            std::cout << "clear!\n";
+            --MDesc->use_counter;
+            if (MDesc->use_counter == 0) {
                 //std::cout << "self clear\n";
-                for (int i = 0; i < MDesc->row_size; ++i) {
-                    delete[]this->M[i];
-                    this->M[i] = NULL;
+                for (size_t i = 0; i < MDesc->row_size; ++i) {
+                    delete[]this->Mat[i];
+                    this->Mat[i] = NULL;
                 }
-                delete[]this->M;
+                delete[]this->Mat;
                 delete this->MDesc;
             }
-            for (int i = 0; i < MDesc->memAsyc.size(); ++i) {
+            for (size_t i = 0; i < MDesc->memAsyc.size(); ++i) {
                 if (MDesc->memAsyc[i] == this) {
                     MDesc->memAsyc[i] = MDesc->memAsyc.back();
                     MDesc->memAsyc.pop_back();
                     break;
                 }
             }
-            this->M = NULL;
+            this->Mat = NULL;
             this->MDesc = NULL;
         }
     }
@@ -146,50 +142,58 @@ namespace bzx {
     // 拷贝赋值
     Matrix& Matrix::operator=(const Matrix& Mat) {
 
-        if (this->M == Mat.M) {
+        if (this->Mat == Mat.Mat) {
             return *this;
         }
-        Clear();
-        // 内存为NULL
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        this->MDesc = new MatrixDsec(R, C, 1);
 
-        int i = 0, j = 0;
-        double** tmp2, * tmp;
-        tmp2 = new double* [R];
-        if (tmp2 == NULL) {
-            throw "failed to alloc new memory!\n";
-        }
+        if (this->MDesc->use_counter <=1) {
+            clear();
+            // 内存为NULL
+            size_t _mSize_r, _mSize_c;
+            std::tie(_mSize_r, _mSize_c) = Mat.shape();
+            this->MDesc = new Matrixdsec(_mSize_r, _mSize_c, 1);
 
-        for (i = 0; i < R; ++i) {
-            tmp = new double[C];
-            if (tmp == NULL) {
+            size_t i = 0, j = 0;
+            
+            double** tmp2, * tmp;
+            tmp2 = new double* [_mSize_r];
+            if (tmp2 == NULL) {
                 throw "failed to alloc new memory!\n";
             }
 
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.M[i] + j));
+            for (i = 0; i < _mSize_r; ++i) {
+                tmp = new double[_mSize_c];
+                if (tmp == NULL) {
+                    throw "failed to alloc new memory!\n";
+                }
+
+                for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                    _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.Mat[i] + j));
+                }
+                while (j < _mSize_c) {
+                    *(tmp + j) = Mat.Mat[i][j];
+                    ++j;
+                }
+                tmp2[i] = tmp;
             }
-            while (j < C) {
-                *(tmp + j) = Mat.M[i][j];
-                ++j;
-            }
-            tmp2[i] = tmp;
+            this->Mat = tmp2;
+            this->MDesc->memAsyc.push_back(this);
         }
-        this->M = tmp2;
-        this->MDesc->memAsyc.push_back(this);
+        else {
+            this->memAsycEqual(Mat);
+        }
+        
         return *this;
     }
 
     // 指针
     Matrix& Matrix::operator=(Matrix* Mat) {
-        if (this->M == Mat->M) {
+        if (this->Mat != NULL && this->Mat == Mat->Mat) {
             return *this;
         }
-        Mat->MDesc->use_Counter += 1;
-        Clear(); // 更新useCounter
-        this->M = Mat->M;
+        Mat->MDesc->use_counter += 1;
+        clear(); // 更新usecounter
+        this->Mat = Mat->Mat;
         this->MDesc = Mat->MDesc;
         this->MDesc->memAsyc.push_back(this);
        
@@ -201,66 +205,73 @@ namespace bzx {
      * 叉乘
      */
     Matrix operator*(const Matrix& Mat, const Matrix& Mat2) {
-        size_t R, C, R2, C2;
-        std::tie(R, C) = Mat.shape();
-        std::tie(R2, C2) = Mat2.shape();
-        assert(C == R2);
 
-        Matrix Dst(R, C2, 0);
+        size_t _mSize_r, _mSize_c;
+        size_t _m2Size_r, _m2Size_c;
+
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        std::tie(_m2Size_r, _m2Size_c) = Mat2.shape();
+
+
+        assert(_mSize_c == _m2Size_r);
+
+        Matrix dst(_mSize_r, _m2Size_c, 0);
         // version 0.2
-        int k = 0;
+        size_t k = 0;
         __m256d dst_m256d = _mm256_set_pd(0, 0, 0, 0);
-        __m256d mat2_m256d;
+        __m256d Mat2_m256d;
         double dst_array[4];
-        for (int i = 0; i < R; ++i) {
-            for (int j = 0; j < C2; ++j) {
-                for (k = 0; k + 4 <= R2; k += 4) {
-                    mat2_m256d = _mm256_set_pd(Mat2.M[k + 3][j], Mat2.M[k + 2][j], Mat2.M[k + 1][j], Mat2.M[k][j]);
-                    dst_m256d = _mm256_add_pd(dst_m256d, _mm256_mul_pd(_mm256_load_pd(Mat.M[i] + k), mat2_m256d));
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            for (size_t j = 0; j < _m2Size_c; ++j) {
+                for (k = 0; k + 4 <= _m2Size_r; k += 4) {
+                    Mat2_m256d = _mm256_set_pd(Mat2.Mat[k + 3][j], Mat2.Mat[k + 2][j], Mat2.Mat[k + 1][j], Mat2.Mat[k][j]);
+                    dst_m256d = _mm256_add_pd(dst_m256d, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + k), Mat2_m256d));
                 }
                 _mm256_store_pd(dst_array, dst_m256d);
-                Dst.M[i][j] = dst_array[0] + dst_array[1] + dst_array[2] + dst_array[3];
-                while (k < C) {
-                    Dst.M[i][j] += (Mat.M[i][k] * Mat2.M[k][j]);
+                dst.Mat[i][j] = dst_array[0] + dst_array[1] + dst_array[2] + dst_array[3];
+                while (k < _mSize_c) {
+                    dst.Mat[i][j] += (Mat.Mat[i][k] * Mat2.Mat[k][j]);
                     ++k;
                 }
                 dst_m256d = _mm256_set_pd(0, 0, 0, 0);
             }
         }
 
-        return Dst;
+        return dst;
     }
 
 
-    Matrix dot(const Matrix& Mat, const Matrix& Mat2) {
-        size_t R, C, R2, C2;
-        std::tie(R, C) = Mat.shape();
-        std::tie(R2, C2) = Mat2.shape();
-        assert(C == R2);
-        assert(R == R2);
+    Matrix DOT(const Matrix& Mat, const Matrix& Mat2) {
+        size_t _mSize_r, _mSize_c;
+        size_t _m2Size_r, _m2Size_c;
+        
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        std::tie(_m2Size_r, _m2Size_c) = Mat2.shape();
 
-        Matrix dst(R, C);
-        int i = 0, j = 0;
-        if (C == C2) {
-            for (i = 0; i < R; ++i) {
-                for (j = 0; j + 4 <= C; j += 4) {
-                    _mm256_store_pd(dst.M[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.M[i] + j), _mm256_load_pd(Mat2.M[i] + j)));
+        assert(_m2Size_r == _mSize_r);
+
+        Matrix dst(_mSize_r, _mSize_c);
+        size_t i = 0, j = 0;
+        if (_m2Size_c == _mSize_c) {
+            for (i = 0; i < _mSize_r; ++i) {
+                for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                    _mm256_store_pd(dst.Mat[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + j), _mm256_load_pd(Mat2.Mat[i] + j)));
                 }
-                while (j < C) {
-                    dst.M[i][j] = Mat.M[i][j] * Mat2.M[i][j];
+                while (j < _mSize_c) {
+                    dst.Mat[i][j] = Mat.Mat[i][j] * Mat2.Mat[i][j];
                     ++j;
                 }
             }
         }
         else {
-            assert(C2 == 1);
-            for (i = 0; i < R; ++i) {
-                __m256d m256d = _mm256_set_pd(Mat2.M[i][0], Mat2.M[i][0], Mat2.M[i][0], Mat2.M[i][0]);
-                for (j = 0; j + 4 <= C; j += 4) {
-                    _mm256_store_pd(dst.M[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.M[i] + j), m256d));
+            assert(_m2Size_c == 1);
+            for (i = 0; i < _mSize_r; ++i) {
+                __m256d m256d = _mm256_set_pd(Mat2.Mat[i][0], Mat2.Mat[i][0], Mat2.Mat[i][0], Mat2.Mat[i][0]);
+                for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                    _mm256_store_pd(dst.Mat[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + j), m256d));
                 }
-                while (j < C) {
-                    dst.M[i][j] = Mat.M[i][j] * Mat2.M[i][0];
+                while (j < _mSize_c) {
+                    dst.Mat[i][j] = Mat.Mat[i][j] * Mat2.Mat[i][0];
                     ++j;
                 }
             }
@@ -269,18 +280,18 @@ namespace bzx {
         return dst;
     }
 
-    Matrix dot(const Matrix& Mat, const double& num) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        Matrix dst(R, C);
-        int i = 0, j = 0;
+    Matrix DOT(const Matrix& Mat, const double& num) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        Matrix dst(_mSize_r, _mSize_c);
+        size_t i = 0, j = 0;
         __m256d m256 = _mm256_set_pd(num, num, num, num);
-        for (i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(dst.M[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.M[i] + j), m256));
+        for (i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                _mm256_store_pd(dst.Mat[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + j), m256));
             }
-            while (j < C) {
-                dst.M[i][j] = Mat.M[i][j] * num;
+            while (j < _mSize_c) {
+                dst.Mat[i][j] = Mat.Mat[i][j] * num;
                 ++j;
             }
         }
@@ -291,17 +302,17 @@ namespace bzx {
 
     Matrix operator/(const Matrix& Mat, const double& num) {
         assert(num != 0);
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        Matrix dst(R, C);
-        int i = 0, j = 0;
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        Matrix dst(_mSize_r, _mSize_c);
+        size_t i = 0, j = 0;
         __m256d m256 = _mm256_set_pd(num, num, num, num);
-        for (i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(dst.M[i] + j, _mm256_div_pd(_mm256_load_pd(Mat.M[i] + j), m256));
+        for (i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                _mm256_store_pd(dst.Mat[i] + j, _mm256_div_pd(_mm256_load_pd(Mat.Mat[i] + j), m256));
             }
-            while (j < C) {
-                dst.M[i][j] = Mat.M[i][j] / num;
+            while (j < _mSize_c) {
+                dst.Mat[i][j] = Mat.Mat[i][j] / num;
                 ++j;
             }
         }
@@ -311,19 +322,16 @@ namespace bzx {
 
     Matrix operator+(const Matrix& Mat, const Matrix& Mat2) {
         assert(Mat.shape() == Mat2.shape());
-
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-
-        Matrix dst(R, C);
-
-        int i = 0, j = 0;
-        for (i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(dst.M[i] + j, _mm256_add_pd(_mm256_load_pd(Mat.M[i] + j), _mm256_load_pd(Mat2.M[i] + j)));
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        Matrix dst(_mSize_r, _mSize_c);
+        size_t i = 0, j = 0;
+        for (i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                _mm256_store_pd(dst.Mat[i] + j, _mm256_add_pd(_mm256_load_pd(Mat.Mat[i] + j), _mm256_load_pd(Mat2.Mat[i] + j)));
             }
-            while (j < C) {
-                dst.M[i][j] = Mat.M[i][j] + Mat2.M[i][j];
+            while (j < _mSize_c) {
+                dst.Mat[i][j] = Mat.Mat[i][j] - Mat2.Mat[i][j];
                 ++j;
             }
         }
@@ -332,26 +340,26 @@ namespace bzx {
 
     Matrix operator-(const Matrix& Mat, const Matrix& Mat2) {
         assert(Mat.shape() == Mat2.shape());
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        Matrix dst(R, C);
-        int i = 0, j = 0;
-        for (i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(dst.M[i] + j, _mm256_sub_pd(_mm256_load_pd(Mat.M[i] + j), _mm256_load_pd(Mat2.M[i] + j)));
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        Matrix dst(_mSize_r, _mSize_c);
+        size_t i = 0, j = 0;
+        for (i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                _mm256_store_pd(dst.Mat[i] + j, _mm256_sub_pd(_mm256_load_pd(Mat.Mat[i] + j), _mm256_load_pd(Mat2.Mat[i] + j)));
             }
-            while (j < C) {
-                dst.M[i][j] = Mat.M[i][j] - Mat2.M[i][j];
+            while (j < _mSize_c) {
+                dst.Mat[i][j] = Mat.Mat[i][j] - Mat2.Mat[i][j];
                 ++j;
             }
         }
         return dst;
     }
 
-    Matrix::Matrix(const int _row_size, const int _col_size, const double init_num) {
-        Clear();
-        this->MDesc = new MatrixDsec(_row_size, _col_size, 1);
-        int  i = 0, j = 0;
+    Matrix::Matrix(const size_t &_row_size, const size_t& _col_size, const double &init_num) {
+        clear();
+        this->MDesc = new Matrixdsec(_row_size, _col_size, 1);
+        size_t  i = 0, j = 0;
 
         // 分配内存并初始化
         double** tmp2 = new double* [_row_size];
@@ -359,7 +367,7 @@ namespace bzx {
         if (tmp2 == NULL) {
             throw "failed to alloc new memory!\n";
         }
-        this->M = tmp2;
+        this->Mat = tmp2;
 
         __m256d m256 = _mm256_set_pd(init_num, init_num, init_num, init_num);
         for (i = 0; i < _row_size; ++i) {
@@ -374,7 +382,7 @@ namespace bzx {
                 *(tmp + j) = init_num;
                 ++j;
             }
-            this->M[i] = tmp;
+            this->Mat[i] = tmp;
         }
         this->MDesc->memAsyc.push_back(this);
     }
@@ -384,22 +392,26 @@ namespace bzx {
         assert(src.begin()->size() > 0);
 
         ////////////////////
-        Clear();
+        clear();
 
-        size_t R = src.size(), C = src.begin()->size();
-        this->MDesc = new MatrixDsec(R, C, 1);
+        size_t r = src.size(), c = src.begin()->size();
+        
+        size_t _mSize_r = src.size();
+        size_t _mSize_c = src.begin()->size();
+        
+        this->MDesc = new Matrixdsec(r, c, 1);
 
-        int i = 0, j = 0;
+        size_t i = 0, j = 0;
         double** tmp2, * tmp;
-        tmp2 = new double* [R];
+        tmp2 = new double* [_mSize_r];
         if (tmp2 == NULL) {
             throw "failed to alloc new memory!\n";
         }
-        this->M = tmp2;
+        this->Mat = tmp2;
 
         for (auto row = src.begin(); row != src.end(); ++row) {
             j = 0;
-            tmp = new double[C];
+            tmp = new double[_mSize_c];
             if (tmp == NULL) {
                 throw "failed to alloc new memory!\n";
             }
@@ -407,44 +419,46 @@ namespace bzx {
                 *(tmp + j) = *ele;
                 ++j;
             }
-            this->M[i] = tmp;
+            this->Mat[i] = tmp;
             ++i;
         }
         this->MDesc->memAsyc.push_back(this);
     }
 
     /*
-        以拷贝赋值
+        以拷贝赋值的构造函数
     */
     Matrix::Matrix(const Matrix& Mat) {
 
-        Clear();
-        size_t R = Mat.MDesc->row_size;
-        size_t C = Mat.MDesc->col_size;
-        this->MDesc = new MatrixDsec(R, C, 1);
+        clear();
+        
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        
+        this->MDesc = new Matrixdsec(_mSize_r, _mSize_c, 1);
 
-        int i = 0, j = 0;
+        size_t i = 0, j = 0;
         double** tmp2, * tmp;
-        tmp2 = new double* [R];
+        tmp2 = new double* [_mSize_r];
         if (tmp2 == NULL) {
             throw "failed to alloc new memory!\n";
         }
-        this->M = tmp2;
+        this->Mat = tmp2;
 
-        for (i = 0; i < R; ++i) {
-            tmp = new double[C];
+        for (i = 0; i < _mSize_r; ++i) {
+            tmp = new double[_mSize_c];
             if (tmp == NULL) {
                 throw "failed to alloc new memory!\n";
             }
 
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.M[i] + j));
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.Mat[i] + j));
             }
-            while (j < C) {
-                *(tmp + j) = Mat.M[i][j];
+            while (j < _mSize_c) {
+                *(tmp + j) = Mat.Mat[i][j];
                 ++j;
             }
-            this->M[i] = tmp;
+            this->Mat[i] = tmp;
         }
         this->MDesc->memAsyc.push_back(this);
     }
@@ -453,45 +467,45 @@ namespace bzx {
      * 输出
      */
     std::ostream& operator<<(std::ostream& out, const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        for (int i = 0; i < R; ++i) {
-            for (int j = 0; j < C; ++j) {
-                out << Mat.M[i][j] << " ";
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            for (size_t j = 0; j < _mSize_c; ++j) {
+                out << Mat.Mat[i][j] << " ";
             }
             out << "\n";
         }
-        out << "\r- size ( " << R << " ," << C << " )\n";
+        out << "\r- size ( " << _mSize_r << " ," << _mSize_c << " )\n";
         return out;
     }
 
 
     double* Matrix::operator[](const size_t& index) {
-        return this->M[index];
+        return this->Mat[index];
     }
 
     /*
      * 转置矩阵自身
      */
-    Matrix& Matrix::Trans() {
-        *this = &transposition(*this);
+    Matrix& Matrix::TRANS() {
+        *this = &TRANSPOSITION(*this);
         return *this;
     }
 
-    Matrix transposition(const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        Matrix res(C, R);
-        int j = 0;
-        for (int i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4) {
-                res.M[j][i] = Mat.M[i][j];
-                res.M[j + 1][i] = Mat.M[i][j + 1];
-                res.M[j + 2][i] = Mat.M[i][j + 2];
-                res.M[j + 3][i] = Mat.M[i][j + 3];
+    Matrix TRANSPOSITION(const Matrix& Mat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        Matrix res(_mSize_r, _mSize_c);
+        size_t j = 0;
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                res.Mat[j][i] = Mat.Mat[i][j];
+                res.Mat[j + 1][i] = Mat.Mat[i][j + 1];
+                res.Mat[j + 2][i] = Mat.Mat[i][j + 2];
+                res.Mat[j + 3][i] = Mat.Mat[i][j + 3];
             }
-            while (j < C) {
-                res.M[j][i] = Mat.M[i][j];
+            while (j < _mSize_c) {
+                res.Mat[j][i] = Mat.Mat[i][j];
                 ++j;
             }
         }
@@ -502,34 +516,34 @@ namespace bzx {
     /*
      * 求逆矩阵
      */
-    Matrix inverse(const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
+    Matrix INVERSE(const Matrix& Mat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
 
-        assert(R > 0 && R == C);
-        return adjoint_matrix(Mat) / Determinant(Mat);
+        assert(_mSize_r > 0 && _mSize_r == _mSize_c);
+        return ADJOINT_Matrix(Mat) / DETERMINANT(Mat);
     }
 
     /*
      * 行列式
      */
-    double Determinant(const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        assert(R == C && R > 0);
-        return _Determinant(Mat);
+    double DETERMINANT(const Matrix& Mat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        assert(_mSize_r == _mSize_c && _mSize_r > 0);
+        return _DETERMINANT(Mat);
     }
 
     /*
      * 返回Mat对角线元素
      */
-    Matrix diagonal(const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        size_t _size = std::min(R, C);
+    Matrix DIAGONAL(const Matrix& Mat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        size_t _size = std::min(_mSize_r, _mSize_c);
         Matrix res(_size, 1);
-        for (int i = 0; i < _size; ++i) {
-            res.M[i][0] = Mat.M[i][i];
+        for (size_t i = 0; i < _size; ++i) {
+            res.Mat[i][0] = Mat.Mat[i][i];
         }
         return res;
     }
@@ -537,11 +551,11 @@ namespace bzx {
     /*
         以src内数值创建一个[_size ,_size]对角矩阵
     */
-    Matrix diagonal(const size_t& _size, std::initializer_list<double> src) {
+    Matrix DIAGONAL(const size_t& _size, std::initializer_list<double> src) {
         Matrix res(_size, _size);
-        int i = 0;
+        size_t i = 0;
         for (auto el : src) {
-            res.M[i][i] = el;
+            res.Mat[i][i] = el;
             ++i;
             if (i >= _size) {
                 break;
@@ -553,11 +567,11 @@ namespace bzx {
     /*
         以src内数值创建一个[rs,cs]对角矩阵
     */
-    Matrix diagonal(const size_t& rs, const size_t& cs, std::initializer_list<double> src) {
+    Matrix DIAGONAL(const size_t& rs, const size_t& cs, std::initializer_list<double> src) {
         Matrix res(rs, cs);
-        int i = 0;
+        size_t i = 0;
         for (auto el : src) {
-            res.M[i][i] = el;
+            res.Mat[i][i] = el;
             ++i;
             if (i >= rs || i >= cs) {
                 break;
@@ -569,14 +583,14 @@ namespace bzx {
     /*
         根据Mat内的数值创建一个对角矩阵，Mat必须为[1,n]数组
     */
-    Matrix diagonal(const size_t& _size, const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        assert(R == 1);
+    Matrix DIAGONAL(const size_t& _size, const Matrix& Mat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        assert(_mSize_r == 1);
         Matrix res(_size, _size);
-        int i = 0;
-        for (int i = 0; i < _size && i < C; ++i) {
-            res.M[i][i] = Mat.M[0][i];
+        size_t i = 0;
+        for (i = 0; i < _size && i < _mSize_c; ++i) {
+            res.Mat[i][i] = Mat.Mat[0][i];
         }
         return res;
     }
@@ -584,15 +598,15 @@ namespace bzx {
     /*
         根据Mat内的数值创建一个对角矩阵，Mat必须为[1,n]数组
     */
-    Matrix diagonal(const size_t& rs, const size_t& cs, const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        assert(R == 1);
+    Matrix DIAGONAL(const size_t& rs, const size_t& cs, const Matrix& Mat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        assert(_mSize_r == 1);
         Matrix res(rs, cs);
-        int i = 0;
-        int N2 = std::min(rs, cs);
-        for (int i = 0; i < N2 && i < C; ++i) {
-            res.M[i][i] = Mat.M[0][i];
+        size_t i = 0;
+        size_t n2 = std::min(rs, cs);
+        for (i = 0; i < n2 && i < _mSize_c; ++i) {
+            res.Mat[i][i] = Mat.Mat[0][i];
         }
         return res;
     }
@@ -600,39 +614,41 @@ namespace bzx {
     /*
      * 获得一个[_sx_s]单位对角矩阵
      */
-    Matrix eye(const size_t& _size) {
+    Matrix EYE(const size_t& _size) {
         Matrix res(_size, _size);
-        for (int i = 0; i < _size; ++i) {
-            res.M[i][i] = 1;
+        for (size_t i = 0; i < _size; ++i) {
+            res.Mat[i][i] = 1;
         }
         return res;
     }
 
-    Matrix eye(const size_t& rs, const size_t& cs) {
+
+
+    Matrix EYE(const size_t& rs, const size_t& cs) {
         Matrix res(rs, cs);
-        for (int i = 0; i < rs && i < cs; ++i) {
-            res.M[i][i] = 1;
+        for (size_t i = 0; i < rs && i < cs; ++i) {
+            res.Mat[i][i] = 1;
         }
 
         return res;
     }
 
-    Matrix rand_matrix(const size_t& rs, const size_t& cs, const double& Low, const double& high) {
-        srand(time(0));
-        int j = 0;
+    Matrix RAND_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high) {
+        srand(unsigned(time(0)));
+        size_t j = 0;
         Matrix res(rs, cs);
         __m256d m256;
-        for (int i = 0; i < rs; ++i) {
+        for (size_t i = 0; i < rs; ++i) {
             for (j = 0; j + 4 <= cs; j += 4) {
                 m256 = _mm256_set_pd(
-                    rand() % int(high) + Low,
-                    rand() % int(high) + Low,
-                    rand() % int(high) + Low,
-                    rand() % int(high) + Low);
-                _mm256_store_pd(res.M[i] + j, m256);
+                    rand() % int(high - low + 1) + low,
+                    rand() % int(high - low + 1) + low,
+                    rand() % int(high - low + 1) + low,
+                    rand() % int(high - low + 1) + low);
+                _mm256_store_pd(res.Mat[i] + j, m256);
             }
             while (j < cs) {
-                res.M[i][j] = rand() % int(high) + Low;
+                res.Mat[i][j] = rand() % int(high - low + 1) + low;
                 ++j;
             }
         }
@@ -645,30 +661,30 @@ namespace bzx {
      *  sub_i,sub_j 记录删除行列位置
      */
 
-    double _Determinant(const Matrix& subMat) {
-        size_t R, C;
-        std::tie(R, C) = subMat.shape();
-        assert(R == C);  // 方阵
+    double _DETERMINANT(const Matrix& subMat) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = subMat.shape();
+        assert(_mSize_r == _mSize_c);  // 方阵
         double res = 0.0;
-        if (R == 1) {
-            res = subMat.M[0][0];
+        if (_mSize_r == 1) {
+            res = subMat.Mat[0][0];
             return res;
         }
-        if (R == 2) {
-            res = subMat.M[0][0] * subMat.M[1][1] - subMat.M[0][1] * subMat.M[1][0];
+        if (_mSize_r == 2) {
+            res = subMat.Mat[0][0] * subMat.Mat[1][1] - subMat.Mat[0][1] * subMat.Mat[1][0];
             return res;
         }
 
-        Matrix new_subMat(R - 1, C - 1);
-        for (int j = 0; j < C; ++j) {
-            for (int r = 0; r < R; ++r) {
-                for (int c = 0; c < C; ++c) {
-                    if (r != 0 && c != j) {
-                        new_subMat.M[r > 0 ? r - 1 : r][c > j ? c - 1 : c] = subMat.M[r][c];
+        Matrix new_subMat(_mSize_r - 1, _mSize_c - 1);
+        for (size_t j = 0; j < _mSize_c; ++j) {
+            for (size_t r = 0; r < _mSize_r; ++r) {
+                for (size_t c = 0; c < _mSize_c; ++c) {
+                    if (_mSize_r != 0 && _mSize_r != _mSize_c) {
+                        new_subMat.Mat[r > 0 ? r - 1 : r][c > j ? c - 1 : c] = subMat.Mat[r][c];
                     }
                 }
             }
-            res += (subMat.M[0][j] * (pow(-1, j) * _Determinant(new_subMat)));
+            res += (subMat.Mat[0][j] * (pow(-1, j) * _DETERMINANT(new_subMat)));
         }
         return res;
     }
@@ -676,59 +692,59 @@ namespace bzx {
     /*
      * 伴随矩阵
      */
-    Matrix adjoint_matrix(const Matrix& Mat) {
-        std::size_t R, C;
-        std::tie(R, C) = Mat.shape();
+    Matrix ADJOINT_Matrix(const Matrix& Mat) {
+        std::size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
 
-        assert(R == C && R > 0);
-        Matrix res(R, C);
-        Matrix sub_mat(R - 1, C - 1);
+        assert(_mSize_r == _mSize_c && _mSize_r > 0);
+        Matrix res(_mSize_r, _mSize_c);
+        Matrix sub_Mat(_mSize_r - 1, _mSize_c - 1);
 
-        if (R == 1) {
+        if (_mSize_r == 1) {
             res = { {1} };
             return res;
         }
-        for (int i = 0; i < R; ++i) {
-            for (int j = 0; j < C; ++j) {
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            for (size_t j = 0; j < _mSize_c; ++j) {
 
-                for (int r = 0; r < R; ++r) {
-                    for (int c = 0; c < C; ++c) {
+                for (size_t r = 0; r < _mSize_r; ++r) {
+                    for (size_t c = 0; c < _mSize_c; ++c) {
                         if (r != i && c != j) {
-                            sub_mat.M[r > i ? r - 1 : r][c > j ? c - 1 : c] = Mat.M[r][c];
+                            sub_Mat.Mat[r > i ? r - 1 : r][c > j ? c - 1 : c] = Mat.Mat[r][c];
                         }
                     }
                 }
-                res.M[i][j] = (pow(-1, i + j) * _Determinant(sub_mat));
+                res.Mat[i][j] = (pow(-1, i + j) * _DETERMINANT(sub_Mat));
             }
         }
-        res.Trans();
+        res.TRANS();
         return res;
     }
 
 
     // 特征值分解
-    std::tuple<Matrix, Matrix> Eigendecomposition(const Matrix& Mat) {
-        return Jacobi(Mat);
+    std::tuple<Matrix, Matrix> EigenDec(const Matrix& Mat) {
+        return JACOBI(Mat);
     }
 
     double MAX(const Matrix& Mat) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
+        size_t _mSize_r, _mSize_c;;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
         double tmp[4] = { DMIN,DMIN,DMIN,DMIN };
-        __m256d MAX_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
+        __m256d max_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
         double res = DMIN;
-        int j = 0;
-        for (int i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4) {
-                MAX_256 = _mm256_max_pd(_mm256_load_pd(Mat.M[i] + j), MAX_256);
+        size_t j = 0;
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                max_256 = _mm256_max_pd(_mm256_load_pd(Mat.Mat[i] + j), max_256);
             }
-            _mm256_store_pd(tmp, MAX_256);
+            _mm256_store_pd(tmp, max_256);
             res = std::max(res, std::max(std::max(tmp[0], tmp[1]), std::max(tmp[2], tmp[3])));
-            while (j < C) {
-                res = std::max(res, Mat.M[i][j]);
+            while (j < _mSize_c) {
+                res = std::max(res, Mat.Mat[i][j]);
                 ++j;
             }
-            MAX_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
+            max_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
         }
         return res;
     }
@@ -736,19 +752,17 @@ namespace bzx {
     std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat) {
 
         Matrix ATA, AAT, tmp, U, Sigma, V;
-        tmp = &transposition(Mat);
+        tmp = &TRANSPOSITION(Mat);
         ATA = &(tmp * Mat);
         AAT = &(Mat * tmp);
-        std::tie(std::ignore, V) = Jacobi(ATA);
+        std::tie(std::ignore, V) = JACOBI(ATA);
+        std::tie(Sigma, U) = JACOBI(AAT);
 
-        std::tie(Sigma, U) = Jacobi(AAT);
-
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        Sigma.Trans();
-        Sigma = &diagonal(R, C, Sigma);
+        size_t _mSize_r, _mSize_c;;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        Sigma.TRANS();
+        Sigma = &DIAGONAL(_mSize_r, _mSize_c, Sigma);
         Sigma = &SQRT(Sigma);
-        //std::cout << *U << *Sigma2 << *V;
 
         return std::make_tuple(U, Sigma, V);
     }
@@ -756,98 +770,99 @@ namespace bzx {
     /*
      * 雅克比法计算特征值与特征向量
      */
-    std::tuple<Matrix, Matrix> Jacobi(const Matrix& Mat) {
-        std::size_t R, C;
-        std::tie(R, C) = Mat.shape();
+    std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat) {
+        std::size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
 
         Matrix EigenVector;
-        EigenVector = &eye(R, C);
+        EigenVector = &EYE(_mSize_r, _mSize_c);
         Matrix U;
-        U = &eye(R, C);
-        Matrix UT;
-        Matrix EigenValue(R, 1);
-        Matrix copy_Mat = Mat;
-        size_t max_iter = 1e4;
-        size_t iter = 0;
-        double dbAngle, sinTheta, cosTheta;
-        double precision = 1e-10;
+        U = &EYE(_mSize_r, _mSize_c);
+        Matrix UT; // U's trans
+        Matrix EigenValue(_mSize_r, 1);
+        Matrix copy_Mat = Mat; 
+        size_t MAX_Iter = size_t(1e4);     // 控制迭代次数
+        size_t Iter = 0;
+        double dbangle, sintheta, costheta;
+        double precision = 1e-10;  // 控制精度
 
-        while (iter < max_iter)
+        while (Iter < MAX_Iter)
         {
             // 寻找非对角线元素最大值，及位置
-            double Non_Dia_Max_Value_abs = abs(copy_Mat[0][1]);
-            size_t Non_Dia_Max_row = 0, Non_Dia_Max_col = 1;
-            for (int i = 0; i < R; ++i) {
-                for (int j = 0; j < C; ++j) {
-                    if (i != j && abs(copy_Mat.M[i][j]) > Non_Dia_Max_Value_abs)
+            double non_dia_max_value_abs = abs(copy_Mat[0][1]);
+            size_t non_dia_max_row = 0, non_dia_max_col = 1;
+            for (size_t i = 0; i < _mSize_r; ++i) {
+                for (size_t j = 0; j < _mSize_c; ++j) {
+                    if (i != j && abs(copy_Mat.Mat[i][j]) > non_dia_max_value_abs)
                     {
-                        Non_Dia_Max_row = i;
-                        Non_Dia_Max_col = j;
-                        Non_Dia_Max_Value_abs = abs(copy_Mat.M[i][j]);
+                        non_dia_max_row = i;
+                        non_dia_max_col = j;
+                        non_dia_max_value_abs = abs(copy_Mat.Mat[i][j]);
                     }
                 }
             }
 
             // 检车是否需要退出循环
-            if (Non_Dia_Max_Value_abs < precision) {
+            if (non_dia_max_value_abs < precision) {
                 break;
             }
 
             // 计算旋转矩阵
-            if (copy_Mat.M[Non_Dia_Max_col][Non_Dia_Max_col] == copy_Mat.M[Non_Dia_Max_row][Non_Dia_Max_row]) {
-                dbAngle = PI / 4;
+            if (copy_Mat.Mat[non_dia_max_col][non_dia_max_col] == copy_Mat.Mat[non_dia_max_row][non_dia_max_row]) {
+                dbangle = PI / 4;
             }
             else {
-                dbAngle = 0.5 * atan2(2 * copy_Mat[Non_Dia_Max_row][Non_Dia_Max_col],
-                    copy_Mat.M[Non_Dia_Max_col][Non_Dia_Max_col] - copy_Mat.M[Non_Dia_Max_row][Non_Dia_Max_row]);
+                dbangle = 0.5 * atan2(2 * copy_Mat[non_dia_max_row][non_dia_max_col],
+                    copy_Mat.Mat[non_dia_max_col][non_dia_max_col] - copy_Mat.Mat[non_dia_max_row][non_dia_max_row]);
             }
 
-            sinTheta = sin(dbAngle);
-            cosTheta = cos(dbAngle);
+            sintheta = sin(dbangle);
+            costheta = cos(dbangle);
 
-            // 计算特征向量 ,Givens rotation matrix
-            U.M[Non_Dia_Max_row][Non_Dia_Max_row] = cosTheta;
-            U.M[Non_Dia_Max_row][Non_Dia_Max_col] = -sinTheta;
-            U.M[Non_Dia_Max_col][Non_Dia_Max_row] = sinTheta;
-            U.M[Non_Dia_Max_col][Non_Dia_Max_col] = cosTheta;
-            UT = &transposition(U);
+            // 计算特征向量 ,givens rotation Matrix
+            U.Mat[non_dia_max_row][non_dia_max_row] = costheta;
+            U.Mat[non_dia_max_row][non_dia_max_col] = -sintheta;
+            U.Mat[non_dia_max_col][non_dia_max_row] = sintheta;
+            U.Mat[non_dia_max_col][non_dia_max_col] = costheta;
+            UT = &TRANSPOSITION(U);
             copy_Mat = &(U * copy_Mat * UT);
 
             EigenVector = &(EigenVector * (UT));
-            U.M[Non_Dia_Max_row][Non_Dia_Max_row] = 1;
-            U.M[Non_Dia_Max_row][Non_Dia_Max_col] = 0;
-            U.M[Non_Dia_Max_col][Non_Dia_Max_row] = 0;
-            U.M[Non_Dia_Max_col][Non_Dia_Max_col] = 1;
+            fast_copy(EigenVector, EigenVector * (UT));
+            U.Mat[non_dia_max_row][non_dia_max_row] = 1;
+            U.Mat[non_dia_max_row][non_dia_max_col] = 0;
+            U.Mat[non_dia_max_col][non_dia_max_row] = 0;
+            U.Mat[non_dia_max_col][non_dia_max_col] = 1;
 
-            ++iter;
+            ++Iter;
         }
 
         // 计算特征值
-        EigenValue = &diagonal(copy_Mat);
+        EigenValue = &DIAGONAL(copy_Mat);
         // 排序
-        double _MAX_VALUE;
-        size_t _MAX_index;
+        double _max_value;
+        size_t _max_index;
         double tmp;
-        std::tie(R, C) = EigenValue.shape();
-        for (int i = 0; i < R; ++i) {
-            _MAX_index = i;
-            _MAX_VALUE = EigenValue.M[i][0];
-            for (int j = i + 1; j < R; ++j) {
-                if (_MAX_VALUE < EigenValue.M[j][0]) {
-                    _MAX_index = j;
-                    _MAX_VALUE = EigenValue.M[j][0];
+        std::tie(_mSize_r, _mSize_c) = EigenValue.shape();
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            _max_index = i;
+            _max_value = EigenValue.Mat[i][0];
+            for (size_t j = i + 1; j < _mSize_r; ++j) {
+                if (_max_value < EigenValue.Mat[j][0]) {
+                    _max_index = j;
+                    _max_value = EigenValue.Mat[j][0];
                 }
-                if (abs(EigenVector.M[i][j]) < precision) {
-                    EigenVector.M[i][j] = 0;
+                if (abs(EigenVector.Mat[i][j]) < precision) {
+                    EigenVector.Mat[i][j] = 0;
                 }
             }
-            if (abs(EigenValue.M[i][0]) < precision) {
-                EigenValue.M[i][0] = 0;
+            if (abs(EigenValue.Mat[i][0]) < precision) {
+                EigenValue.Mat[i][0] = 0;
             }
-            tmp = EigenValue.M[i][0];
-            std::swap(EigenValue.M[i][0], EigenValue.M[_MAX_index][0]);
-            for (int k = 0; _MAX_index != i && k < R; ++k) {
-                std::swap(EigenVector.M[k][i], EigenVector.M[k][_MAX_index]);
+            tmp = EigenValue.Mat[i][0];
+            std::swap(EigenValue.Mat[i][0], EigenValue.Mat[_max_index][0]);
+            for (size_t k = 0; _max_index != i && k < _mSize_r; ++k) {
+                std::swap(EigenVector.Mat[k][i], EigenVector.Mat[k][_max_index]);
             }
         }
         return std::make_tuple(EigenValue, EigenVector);
@@ -857,40 +872,41 @@ namespace bzx {
     /*
      *  返回一对特征值与特征向量
      */
-    std::tuple<double, Matrix> Power_method(const Matrix& Mat, const double& min_delta = 1e-5, const size_t& max_iter = 1e3) {
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
-        assert(R == C); // ROW_SIZE,COL_SIZE
+    std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta = 1e-5, const size_t& max_iter = 1e3) {
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        assert(_mSize_r == _mSize_c); // row_size,col_size
 
-        Matrix X = Matrix(R, 1, 1);
+        Matrix X = Matrix(_mSize_r, 1, 1);   // 特征向量
         Matrix Y;
-        double M = 0, pre_M = 0;
+        double m = 0, pre_m = 0;   //特征值
         size_t iter = 0;
-        double delta = INT32_MAX;
-        while (iter < max_iter && delta >min_delta) {
-            Y = &(Mat * (X));
-            M = MAX(Y);
-            delta = abs(M - pre_M);
-            pre_M = M;
-            X = &((Y) / M);
+        double Delta = INT32_MAX;
+        while (iter < max_iter && Delta >min_delta) {
+            Y = &(Mat * X);
+            m = MAX(Y);
+            Delta = abs(m - pre_m);
+            pre_m = m;
+            X = &(Y / m);
             iter += 1;
         }
-        return std::make_tuple(M, X);
+        return std::make_tuple(m, X);
     }
 
     Matrix SQRT(const Matrix& Mat) {
         Matrix dst(Mat);
-        size_t R, C, j, i;
+        size_t _mSize_r, _mSize_c;
+        size_t j, i;
 
-        std::tie(R, C) = Mat.shape();
-        for (i = 0; i < R; ++i) {
-            for (j = 0; j + 4 <= C; j += 4)
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        for (i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4)
             {
-                _mm256_store_pd(dst.M[i] + j,
-                    _mm256_sqrt_pd(_mm256_load_pd(Mat.M[i] + j)));
+                _mm256_store_pd(dst.Mat[i] + j,
+                    _mm256_sqrt_pd(_mm256_load_pd(Mat.Mat[i] + j)));
             }
-            while (j < C) {
-                dst.M[i][j] = std::sqrt(Mat.M[i][j]);
+            while (j < _mSize_c) {
+                dst.Mat[i][j] = std::sqrt(Mat.Mat[i][j]);
                 ++j;
             }
         }
@@ -898,49 +914,80 @@ namespace bzx {
     }
 
     // 拷贝赋值
+    /*
+        此函数功能类似与share_ptr中的reset(ELE)函数。
+    */
     bool Matrix::memAsycEqual(const Matrix& Mat) {
         // 指向同一内存地址
-        if (this->M == Mat.M) {
+        if (this->Mat == Mat.Mat) {
             return true;
         }
         
-        size_t R, C;
-        std::tie(R, C) = Mat.shape();
+        // 若两个矩阵大小一致，则使用函数fast_copy();
+        if (this->shape() == Mat.shape()) {
+            fast_copy(*this, Mat);
+            return true;
+        }
 
-        int i = 0, j = 0;
+        size_t new_Size_r, new_Size_c;   // 
+        std::tie(new_Size_r, new_Size_c) = Mat.shape();
+        size_t old_Size_r, old_Size_c;
+        std::tie(old_Size_r, old_Size_c) = this->shape();
+
+        // tmp2:Mat
+        // tmp :Row
         double** tmp2, * tmp;
-        tmp2 = new double* [R];
+        
+        size_t j = 0;
+        tmp2 = new double* [new_Size_r];
         if (tmp2 == NULL) {
             throw "failed to alloc new memory!\n";
         }
 
-        for (i = 0; i < R; ++i) {
-            tmp = new double[C];
+        for (size_t i = 0; i < new_Size_r; ++i) {
+            tmp = new double[new_Size_c];
             if (tmp == NULL) {
                 throw "failed to alloc new memory!\n";
             }
 
-            for (j = 0; j + 4 <= C; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.M[i] + j));
+            for (j = 0; j + 4 <= new_Size_c; j += 4) {
+                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.Mat[i] + j));
             }
-            while (j < C) {
-                *(tmp + j) = Mat.M[i][j];
+            while (j < new_Size_c) {
+                *(tmp + j) = Mat.Mat[i][j];
                 ++j;
             }
             tmp2[i] = tmp;
         }
         
-        auto waitDelMat = this->M;
-        std::tie(R, C) = this->shape();
-        for (int i = 0; i < this->MDesc->memAsyc.size(); ++i) {
-            this->MDesc->memAsyc[i]->M = tmp2;
+        auto waitDelMat = this->Mat;
+        for (size_t i = 0; i < this->MDesc->memAsyc.size(); ++i) {
+            this->MDesc->memAsyc[i]->Mat = tmp2;
         }
-        for (int i = 0; i < R; ++i) {
+        this->MDesc->row_size = new_Size_r;
+        this->MDesc->col_size = new_Size_c;
+        for (size_t i = 0; i < old_Size_r; ++i) {
             delete []waitDelMat[i];
         }
         delete[]waitDelMat;
         return true;
     }
+
+    /*
+        快速拷贝，必须确保dst的矩阵行列数大于src
+    */
+    bool fast_copy(Matrix& dst,const Matrix &src) {
+
+        size_t m_Size_r, m_Size_c;
+        std::tie(m_Size_r, m_Size_c) = dst.shape();
+
+        for (size_t i = 0; i < m_Size_r; ++i) {
+            std::copy(src.Mat[i], src.Mat[i] + m_Size_c, dst.Mat[i]);
+            
+        }
+        return true;
+    }
+
 }
 
-#endif //LALIB_MATRIX_H
+#endif //lalib_Matrix_h
