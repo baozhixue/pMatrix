@@ -78,6 +78,7 @@ namespace bzx {
         double* operator[](const size_t& index);
         void clear();
         bool memAsycEqual(const Matrix& Mat);
+        int use_count()const;
 
         Matrix& TRANS();
         std::tuple<size_t, size_t> shape() const {
@@ -99,13 +100,25 @@ namespace bzx {
         clear();
     }
     
+
+    /*
+        返回矩阵内存被使用数量
+    */
+    int Matrix::use_count()const {
+        if (this->MDesc == NULL) {
+            return -1;
+        }
+        return this->MDesc->use_counter;
+    }
+
+
     /*
         若usecounter计数为0，则释放所属内存;否则，仅将指针置为NULL
     */
     void Matrix::clear() {
-        std::cout << "ready clear!\n";
+        //std::cout << "ready clear!\n";
         if (this->MDesc != NULL) {
-            std::cout << "clear!\n";
+            std::cout << "clear all!\n";
             --MDesc->use_counter;
             if (MDesc->use_counter == 0) {
                 //std::cout << "self clear\n";
@@ -146,7 +159,7 @@ namespace bzx {
             return *this;
         }
 
-        if (this->MDesc->use_counter <=1) {
+        if (this->MDesc==NULL || this->MDesc->use_counter <=1) {
             clear();
             // 内存为NULL
             size_t _mSize_r, _mSize_c;
@@ -188,7 +201,7 @@ namespace bzx {
 
     // 指针
     Matrix& Matrix::operator=(Matrix* Mat) {
-        if (this->Mat != NULL && this->Mat == Mat->Mat) {
+        if (this->Mat == Mat->Mat) {
             return *this;
         }
         Mat->MDesc->use_counter += 1;
@@ -469,13 +482,17 @@ namespace bzx {
     std::ostream& operator<<(std::ostream& out, const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        out << "[";
         for (size_t i = 0; i < _mSize_r; ++i) {
+            out << " ";
             for (size_t j = 0; j < _mSize_c; ++j) {
                 out << Mat.Mat[i][j] << " ";
             }
+            if (i + 1 == _mSize_r) {
+                out << "] , (" << _mSize_r << ", " << _mSize_c << ")";
+            }
             out << "\n";
         }
-        out << "\r- size ( " << _mSize_r << " ," << _mSize_c << " )\n";
         return out;
     }
 
