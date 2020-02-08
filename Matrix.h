@@ -29,43 +29,48 @@ namespace bzx2 {
             col_size = cs;
             use_counter = uc;
         }
-        
         size_t row_size = 0;
         size_t col_size = 0;
         size_t use_counter = 0;   //当作为指针传递时，记录被引用数量
         std::vector<Matrix*> memAsyc;
     };  
-    
+
+    Matrix operator+(const Matrix& Mat, const Matrix& Mat2);
+    Matrix operator-(const Matrix& Mat, const Matrix& Mat2);
+    Matrix operator/(const Matrix& Mat, const double& num);
+    Matrix SQRT(const Matrix& Mat);  
+    double MAX(const Matrix& Mat);
+    Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // 叉乘
+    Matrix DOT(const Matrix& Mat, const Matrix& Mat2);
+    Matrix DOT(const Matrix& Mat, const double& num);
+    Matrix INVERSE(const Matrix& Mat);
+    Matrix ADJOINT_Matrix(const Matrix& Mat);
+    Matrix DIAGONAL(const Matrix& Mat);
+    Matrix DIAGONAL(const size_t& _size, std::initializer_list<double> src);
+    Matrix DIAGONAL(const size_t& rs, const size_t& cs, std::initializer_list<double> src);
+    Matrix DIAGONAL(const size_t& _size, const Matrix& Mat);
+    Matrix DIAGONAL(const size_t& rs, const size_t& cs, const Matrix& Mat);
+    Matrix EYE(const size_t& rs, const size_t& cs);
+    Matrix EYE(const size_t& _size);
+    Matrix RAND_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
+    double DETERMINANT(const Matrix& Mat);
+    Matrix TRANSPOSITION(const Matrix& Mat);
+    std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat);
+    std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat);
+    std::tuple<Matrix, Matrix> EigenDec(const Matrix& Mat);
+    std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta, const size_t& max_iter);
+    bool fast_copy(Matrix& dst, const Matrix& src);
+    std::ostream& operator<<(std::ostream& out, const Matrix& m);
+    std::tuple<Matrix, Matrix> QR(const Matrix& Mat);
+    double Norm_2(const Matrix& Mat);
+    std::tuple<Matrix, Matrix, Matrix> PLU(const Matrix& Mat);
+    void row_swap_PLU(Matrix& Mat, size_t i, size_t ii, size_t col_index, bool Left = true);
+    void row_swap(Matrix& Mat, size_t i, size_t ii);
+    std::tuple<Matrix, Matrix> LU(const Matrix& Mat);
+
     class Matrix {
         // double version
         friend std::ostream& operator<<(std::ostream& out, const Matrix& m);
-        friend Matrix operator+(const Matrix& Mat, const Matrix& Mat2);
-        friend Matrix operator-(const Matrix& Mat, const Matrix& Mat2);
-        friend Matrix operator/(const Matrix& Mat, const double& num);
-        friend Matrix SQRT(const Matrix& Mat);
-        friend double MAX(const Matrix& Mat);
-        friend Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // 叉乘
-        friend Matrix DOT(const Matrix& Mat, const Matrix& Mat2);
-        friend Matrix DOT(const Matrix& Mat, const double& num);
-        friend Matrix INVERSE(const Matrix& Mat);
-        friend Matrix ADJOINT_Matrix(const Matrix& Mat);
-        friend Matrix DIAGONAL(const Matrix& Mat);
-        friend Matrix DIAGONAL(const size_t& _size, std::initializer_list<double> src);
-        friend Matrix DIAGONAL(const size_t& rs, const size_t& cs, std::initializer_list<double> src);
-        friend Matrix DIAGONAL(const size_t& _size, const Matrix& Mat);
-        friend Matrix DIAGONAL(const size_t& rs, const size_t& cs, const Matrix& Mat);
-        friend Matrix EYE(const size_t& rs, const size_t& cs);
-        friend Matrix EYE(const size_t& _size);
-        friend Matrix RAND_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
-        friend double DETERMINANT(const Matrix& Mat);
-        friend double _DETERMINANT(const Matrix& subMat);
-        friend Matrix TRANSPOSITION(const Matrix& Mat);
-        friend std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat);
-        friend std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat);
-        friend std::tuple<Matrix, Matrix> EigenDec(const Matrix& Mat);
-        friend std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta, const size_t& max_iter);
-        friend bool fast_copy(Matrix& dst, const Matrix& src);
-        
     public:
         Matrix(const size_t& _row_size, const size_t& _col_size, const double &init_num=0.0);
         Matrix(std::initializer_list<std::initializer_list<double >> src);
@@ -87,12 +92,7 @@ namespace bzx2 {
 
 
         Matrix& TRANS();
-        std::tuple<size_t, size_t> shape() const {
-            if (this->MDesc == NULL) {
-                return std::make_tuple(0, 0);
-            }
-            return std::make_tuple(this->MDesc->row_size, this->MDesc->col_size);
-        }
+        std::tuple<size_t, size_t> shape() const;
 
         ~Matrix();
 
@@ -125,6 +125,13 @@ namespace bzx2 {
         bool Running = false;
     };
 
+    std::tuple<size_t, size_t> Matrix::shape() const
+    {
+        if (this->MDesc == NULL) {
+            return std::make_tuple(0, 0);
+        }
+        return std::make_tuple(this->MDesc->row_size, this->MDesc->col_size);
+    }
 
     Matrix::~Matrix() {
         clear();
@@ -217,10 +224,10 @@ namespace bzx2 {
                 }
 
                 for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                    _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.Mat[i] + j));
+                    _mm256_store_pd(tmp + j, _mm256_load_pd(Mat[i] + j));
                 }
                 while (j < _mSize_c) {
-                    *(tmp + j) = Mat.Mat[i][j];
+                    *(tmp + j) = Mat[i][j];
                     ++j;
                 }
                 tmp2[i] = tmp;
@@ -274,13 +281,13 @@ namespace bzx2 {
         for (size_t i = 0; i < _mSize_r; ++i) {
             for (size_t j = 0; j < _m2Size_c; ++j) {
                 for (k = 0; k + 4 <= _m2Size_r; k += 4) {
-                    Mat2_m256d = _mm256_set_pd(Mat2.Mat[k + 3][j], Mat2.Mat[k + 2][j], Mat2.Mat[k + 1][j], Mat2.Mat[k][j]);
-                    dst_m256d = _mm256_add_pd(dst_m256d, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + k), Mat2_m256d));
+                    Mat2_m256d = _mm256_set_pd(Mat2[k + 3][j], Mat2[k + 2][j], Mat2[k + 1][j], Mat2[k][j]);
+                    dst_m256d = _mm256_add_pd(dst_m256d, _mm256_mul_pd(_mm256_load_pd(Mat[i] + k), Mat2_m256d));
                 }
                 _mm256_store_pd(dst_array, dst_m256d);
-                dst.Mat[i][j] = dst_array[0] + dst_array[1] + dst_array[2] + dst_array[3];
+                dst[i][j] = dst_array[0] + dst_array[1] + dst_array[2] + dst_array[3];
                 while (k < _mSize_c) {
-                    dst.Mat[i][j] += (Mat.Mat[i][k] * Mat2.Mat[k][j]);
+                    dst[i][j] += (Mat[i][k] * Mat2[k][j]);
                     ++k;
                 }
                 dst_m256d = _mm256_set_pd(0, 0, 0, 0);
@@ -305,10 +312,10 @@ namespace bzx2 {
         if (_m2Size_c == _mSize_c) {
             for (i = 0; i < _mSize_r; ++i) {
                 for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                    _mm256_store_pd(dst.Mat[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + j), _mm256_load_pd(Mat2.Mat[i] + j)));
+                    _mm256_store_pd(dst[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));
                 }
                 while (j < _mSize_c) {
-                    dst.Mat[i][j] = Mat.Mat[i][j] * Mat2.Mat[i][j];
+                    dst[i][j] = Mat[i][j] * Mat2[i][j];
                     ++j;
                 }
             }
@@ -316,12 +323,12 @@ namespace bzx2 {
         else {
             assert(_m2Size_c == 1);
             for (i = 0; i < _mSize_r; ++i) {
-                __m256d m256d = _mm256_set_pd(Mat2.Mat[i][0], Mat2.Mat[i][0], Mat2.Mat[i][0], Mat2.Mat[i][0]);
+                __m256d m256d = _mm256_set_pd(Mat2[i][0], Mat2[i][0], Mat2[i][0], Mat2[i][0]);
                 for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                    _mm256_store_pd(dst.Mat[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + j), m256d));
+                    _mm256_store_pd(dst[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat[i] + j), m256d));
                 }
                 while (j < _mSize_c) {
-                    dst.Mat[i][j] = Mat.Mat[i][j] * Mat2.Mat[i][0];
+                    dst[i][j] = Mat[i][j] * Mat2[i][0];
                     ++j;
                 }
             }
@@ -338,10 +345,10 @@ namespace bzx2 {
         __m256d m256 = _mm256_set_pd(num, num, num, num);
         for (i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst.Mat[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat.Mat[i] + j), m256));
+                _mm256_store_pd(dst[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat[i] + j), m256));
             }
             while (j < _mSize_c) {
-                dst.Mat[i][j] = Mat.Mat[i][j] * num;
+                dst[i][j] = Mat[i][j] * num;
                 ++j;
             }
         }
@@ -359,10 +366,10 @@ namespace bzx2 {
         __m256d m256 = _mm256_set_pd(num, num, num, num);
         for (i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst.Mat[i] + j, _mm256_div_pd(_mm256_load_pd(Mat.Mat[i] + j), m256));
+                _mm256_store_pd(dst[i] + j, _mm256_div_pd(_mm256_load_pd(Mat[i] + j), m256));
             }
             while (j < _mSize_c) {
-                dst.Mat[i][j] = Mat.Mat[i][j] / num;
+                dst[i][j] = Mat[i][j] / num;
                 ++j;
             }
         }
@@ -378,10 +385,10 @@ namespace bzx2 {
         size_t i = 0, j = 0;
         for (i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst.Mat[i] + j, _mm256_add_pd(_mm256_load_pd(Mat.Mat[i] + j), _mm256_load_pd(Mat2.Mat[i] + j)));
+                _mm256_store_pd(dst[i] + j, _mm256_add_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));
             }
             while (j < _mSize_c) {
-                dst.Mat[i][j] = Mat.Mat[i][j] + Mat2.Mat[i][j];
+                dst[i][j] = Mat[i][j] + Mat2[i][j];
                 ++j;
             }
         }
@@ -396,10 +403,10 @@ namespace bzx2 {
         size_t i = 0, j = 0;
         for (i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst.Mat[i] + j, _mm256_sub_pd(_mm256_load_pd(Mat.Mat[i] + j), _mm256_load_pd(Mat2.Mat[i] + j)));
+                _mm256_store_pd(dst[i] + j, _mm256_sub_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));
             }
             while (j < _mSize_c) {
-                dst.Mat[i][j] = Mat.Mat[i][j] - Mat2.Mat[i][j];
+                dst[i][j] = Mat[i][j] - Mat2[i][j];
                 ++j;
             }
         }
@@ -502,10 +509,10 @@ namespace bzx2 {
             }
 
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.Mat[i] + j));
+                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat[i] + j));
             }
             while (j < _mSize_c) {
-                *(tmp + j) = Mat.Mat[i][j];
+                *(tmp + j) = Mat[i][j];
                 ++j;
             }
             this->Mat[i] = tmp;
@@ -523,7 +530,7 @@ namespace bzx2 {
         for (size_t i = 0; i < _mSize_r; ++i) {
             out << " ";
             for (size_t j = 0; j < _mSize_c; ++j) {
-                out << Mat.Mat[i][j] << " ";
+                out << Mat[i][j] << " ";
             }
             if (i + 1 == _mSize_r) {
                 out << "] , (" << _mSize_r << ", " << _mSize_c << ")";
@@ -626,13 +633,13 @@ namespace bzx2 {
         size_t j = 0;
         for (size_t i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                res.Mat[j][i] = Mat.Mat[i][j];
-                res.Mat[j + 1][i] = Mat.Mat[i][j + 1];
-                res.Mat[j + 2][i] = Mat.Mat[i][j + 2];
-                res.Mat[j + 3][i] = Mat.Mat[i][j + 3];
+                res[j][i] = Mat[i][j];
+                res[j + 1][i] = Mat[i][j + 1];
+                res[j + 2][i] = Mat[i][j + 2];
+                res[j + 3][i] = Mat[i][j + 3];
             }
             while (j < _mSize_c) {
-                res.Mat[j][i] = Mat.Mat[i][j];
+                res[j][i] = Mat[i][j];
                 ++j;
             }
         }
@@ -652,16 +659,6 @@ namespace bzx2 {
     }
 
     /*
-     * 行列式
-     */
-    double DETERMINANT(const Matrix& Mat) {
-        size_t _mSize_r, _mSize_c;
-        std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        assert(_mSize_r == _mSize_c && _mSize_r > 0);
-        return _DETERMINANT(Mat);
-    }
-
-    /*
      * 返回Mat对角线元素
      */
     Matrix DIAGONAL(const Matrix& Mat) {
@@ -670,7 +667,7 @@ namespace bzx2 {
         size_t _size = std::min(_mSize_r, _mSize_c);
         Matrix res(_size, 1);
         for (size_t i = 0; i < _size; ++i) {
-            res.Mat[i][0] = Mat.Mat[i][i];
+            res[i][0] = Mat[i][i];
         }
         return res;
     }
@@ -682,7 +679,7 @@ namespace bzx2 {
         Matrix res(_size, _size);
         size_t i = 0;
         for (auto el : src) {
-            res.Mat[i][i] = el;
+            res[i][i] = el;
             ++i;
             if (i >= _size) {
                 break;
@@ -698,7 +695,7 @@ namespace bzx2 {
         Matrix res(rs, cs);
         size_t i = 0;
         for (auto el : src) {
-            res.Mat[i][i] = el;
+            res[i][i] = el;
             ++i;
             if (i >= rs || i >= cs) {
                 break;
@@ -717,7 +714,7 @@ namespace bzx2 {
         Matrix res(_size, _size);
         size_t i = 0;
         for (i = 0; i < _size && i < _mSize_c; ++i) {
-            res.Mat[i][i] = Mat.Mat[0][i];
+            res[i][i] = Mat[0][i];
         }
         return res;
     }
@@ -733,7 +730,7 @@ namespace bzx2 {
         size_t i = 0;
         size_t n2 = std::min(rs, cs);
         for (i = 0; i < n2 && i < _mSize_c; ++i) {
-            res.Mat[i][i] = Mat.Mat[0][i];
+            res[i][i] = Mat[0][i];
         }
         return res;
     }
@@ -744,7 +741,7 @@ namespace bzx2 {
     Matrix EYE(const size_t& _size) {
         Matrix res(_size, _size);
         for (size_t i = 0; i < _size; ++i) {
-            res.Mat[i][i] = 1;
+            res[i][i] = 1;
         }
         return res;
     }
@@ -754,7 +751,7 @@ namespace bzx2 {
     Matrix EYE(const size_t& rs, const size_t& cs) {
         Matrix res(rs, cs);
         for (size_t i = 0; i < rs && i < cs; ++i) {
-            res.Mat[i][i] = 1;
+            res[i][i] = 1;
         }
 
         return res;
@@ -772,10 +769,10 @@ namespace bzx2 {
                     rand() % int(high - low + 1) + low,
                     rand() % int(high - low + 1) + low,
                     rand() % int(high - low + 1) + low);
-                _mm256_store_pd(res.Mat[i] + j, m256);
+                _mm256_store_pd(res[i] + j, m256);
             }
             while (j < cs) {
-                res.Mat[i][j] = rand() % int(high - low + 1) + low;
+                res[i][j] = rand() % int(high - low + 1) + low;
                 ++j;
             }
         }
@@ -787,18 +784,17 @@ namespace bzx2 {
      *  i,j 控制子矩阵位置
      *  sub_i,sub_j 记录删除行列位置
      */
-
-    double _DETERMINANT(const Matrix& subMat) {
+    double DETERMINANT(const Matrix& subMat) {
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = subMat.shape();
-        assert(_mSize_r == _mSize_c);  // 方阵
+        assert(_mSize_r == _mSize_c && _mSize_r > 0);  // 方阵
         double res = 0.0;
         if (_mSize_r == 1) {
-            res = subMat.Mat[0][0];
+            res = subMat[0][0];
             return res;
         }
         if (_mSize_r == 2) {
-            res = subMat.Mat[0][0] * subMat.Mat[1][1] - subMat.Mat[0][1] * subMat.Mat[1][0];
+            res = subMat[0][0] * subMat[1][1] - subMat[0][1] * subMat[1][0];
             return res;
         }
 
@@ -807,11 +803,11 @@ namespace bzx2 {
             for (size_t r = 0; r < _mSize_r; ++r) {
                 for (size_t c = 0; c < _mSize_c; ++c) {
                     if (r != 0 && c != j) {
-                        new_subMat.Mat[r > 0 ? r - 1 : r][c > j ? c - 1 : c] = subMat.Mat[r][c];
+                        new_subMat[r > 0 ? r - 1 : r][c > j ? c - 1 : c] = subMat[r][c];
                     }
                 }
             }
-            res += (subMat.Mat[0][j] * (pow(-1, j) * _DETERMINANT(new_subMat)));
+            res += (subMat[0][j] * (pow(-1, j) * DETERMINANT(new_subMat)));
         }
         return abs(res - (1e-5)) > 0 ? res : 0;
     }
@@ -837,11 +833,11 @@ namespace bzx2 {
                 for (size_t r = 0; r < _mSize_r; ++r) {
                     for (size_t c = 0; c < _mSize_c; ++c) {
                         if (r != i && c != j) {
-                            sub_Mat.Mat[r > i ? r - 1 : r][c > j ? c - 1 : c] = Mat.Mat[r][c];
+                            sub_Mat[r > i ? r - 1 : r][c > j ? c - 1 : c] = Mat[r][c];
                         }
                     }
                 }
-                res.Mat[i][j] = (pow(-1, i + j) * _DETERMINANT(sub_Mat));
+                res[i][j] = (pow(-1, i + j) * DETERMINANT(sub_Mat));
             }
         }
         res.TRANS();
@@ -863,12 +859,12 @@ namespace bzx2 {
         size_t j = 0;
         for (size_t i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                max_256 = _mm256_max_pd(_mm256_load_pd(Mat.Mat[i] + j), max_256);
+                max_256 = _mm256_max_pd(_mm256_load_pd(Mat[i] + j), max_256);
             }
             _mm256_store_pd(tmp, max_256);
             res = std::max(res, std::max(std::max(tmp[0], tmp[1]), std::max(tmp[2], tmp[3])));
             while (j < _mSize_c) {
-                res = std::max(res, Mat.Mat[i][j]);
+                res = std::max(res, Mat[i][j]);
                 ++j;
             }
             max_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
@@ -920,11 +916,11 @@ namespace bzx2 {
             size_t non_dia_max_row = 0, non_dia_max_col = 1;
             for (size_t i = 0; i < _mSize_r; ++i) {
                 for (size_t j = 0; j < _mSize_c; ++j) {
-                    if (i != j && abs(copy_Mat.Mat[i][j]) > non_dia_max_value_abs)
+                    if (i != j && abs(copy_Mat[i][j]) > non_dia_max_value_abs)
                     {
                         non_dia_max_row = i;
                         non_dia_max_col = j;
-                        non_dia_max_value_abs = abs(copy_Mat.Mat[i][j]);
+                        non_dia_max_value_abs = abs(copy_Mat[i][j]);
                     }
                 }
             }
@@ -935,31 +931,31 @@ namespace bzx2 {
             }
 
             // 计算旋转矩阵
-            if (copy_Mat.Mat[non_dia_max_col][non_dia_max_col] == copy_Mat.Mat[non_dia_max_row][non_dia_max_row]) {
+            if (copy_Mat[non_dia_max_col][non_dia_max_col] == copy_Mat[non_dia_max_row][non_dia_max_row]) {
                 dbangle = PI / 4;
             }
             else {
                 dbangle = 0.5 * atan2(2 * copy_Mat[non_dia_max_row][non_dia_max_col],
-                    copy_Mat.Mat[non_dia_max_col][non_dia_max_col] - copy_Mat.Mat[non_dia_max_row][non_dia_max_row]);
+                    copy_Mat[non_dia_max_col][non_dia_max_col] - copy_Mat[non_dia_max_row][non_dia_max_row]);
             }
 
             sintheta = sin(dbangle);
             costheta = cos(dbangle);
 
             // 计算特征向量 ,givens rotation Matrix
-            U.Mat[non_dia_max_row][non_dia_max_row] = costheta;
-            U.Mat[non_dia_max_row][non_dia_max_col] = -sintheta;
-            U.Mat[non_dia_max_col][non_dia_max_row] = sintheta;
-            U.Mat[non_dia_max_col][non_dia_max_col] = costheta;
+            U[non_dia_max_row][non_dia_max_row] = costheta;
+            U[non_dia_max_row][non_dia_max_col] = -sintheta;
+            U[non_dia_max_col][non_dia_max_row] = sintheta;
+            U[non_dia_max_col][non_dia_max_col] = costheta;
             UT = &TRANSPOSITION(U);
             copy_Mat = &(U * copy_Mat * UT);
 
             EigenVector = &(EigenVector * (UT));
             fast_copy(EigenVector, EigenVector * (UT));
-            U.Mat[non_dia_max_row][non_dia_max_row] = 1;
-            U.Mat[non_dia_max_row][non_dia_max_col] = 0;
-            U.Mat[non_dia_max_col][non_dia_max_row] = 0;
-            U.Mat[non_dia_max_col][non_dia_max_col] = 1;
+            U[non_dia_max_row][non_dia_max_row] = 1;
+            U[non_dia_max_row][non_dia_max_col] = 0;
+            U[non_dia_max_col][non_dia_max_row] = 0;
+            U[non_dia_max_col][non_dia_max_col] = 1;
 
             ++Iter;
         }
@@ -973,23 +969,23 @@ namespace bzx2 {
         std::tie(_mSize_r, _mSize_c) = EigenValue.shape();
         for (size_t i = 0; i < _mSize_r; ++i) {
             _max_index = i;
-            _max_value = EigenValue.Mat[i][0];
+            _max_value = EigenValue[i][0];
             for (size_t j = i + 1; j < _mSize_r; ++j) {
-                if (_max_value < EigenValue.Mat[j][0]) {
+                if (_max_value < EigenValue[j][0]) {
                     _max_index = j;
-                    _max_value = EigenValue.Mat[j][0];
+                    _max_value = EigenValue[j][0];
                 }
-                if (abs(EigenVector.Mat[i][j]) < precision) {
-                    EigenVector.Mat[i][j] = 0;
+                if (abs(EigenVector[i][j]) < precision) {
+                    EigenVector[i][j] = 0;
                 }
             }
-            if (abs(EigenValue.Mat[i][0]) < precision) {
-                EigenValue.Mat[i][0] = 0;
+            if (abs(EigenValue[i][0]) < precision) {
+                EigenValue[i][0] = 0;
             }
-            tmp = EigenValue.Mat[i][0];
-            std::swap(EigenValue.Mat[i][0], EigenValue.Mat[_max_index][0]);
+            tmp = EigenValue[i][0];
+            std::swap(EigenValue[i][0], EigenValue[_max_index][0]);
             for (size_t k = 0; _max_index != i && k < _mSize_r; ++k) {
-                std::swap(EigenVector.Mat[k][i], EigenVector.Mat[k][_max_index]);
+                std::swap(EigenVector[k][i], EigenVector[k][_max_index]);
             }
         }
         return std::make_tuple(EigenValue, EigenVector);
@@ -1029,11 +1025,11 @@ namespace bzx2 {
         for (i = 0; i < _mSize_r; ++i) {
             for (j = 0; j + 4 <= _mSize_c; j += 4)
             {
-                _mm256_store_pd(dst.Mat[i] + j,
-                    _mm256_sqrt_pd(_mm256_load_pd(Mat.Mat[i] + j)));
+                _mm256_store_pd(dst[i] + j,
+                    _mm256_sqrt_pd(_mm256_load_pd(Mat[i] + j)));
             }
             while (j < _mSize_c) {
-                dst.Mat[i][j] = std::sqrt(Mat.Mat[i][j]);
+                dst[i][j] = std::sqrt(Mat[i][j]);
                 ++j;
             }
         }
@@ -1078,10 +1074,10 @@ namespace bzx2 {
             }
 
             for (j = 0; j + 4 <= new_Size_c; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat.Mat[i] + j));
+                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat[i] + j));
             }
             while (j < new_Size_c) {
-                *(tmp + j) = Mat.Mat[i][j];
+                *(tmp + j) = Mat[i][j];
                 ++j;
             }
             tmp2[i] = tmp;
@@ -1109,38 +1105,13 @@ namespace bzx2 {
         std::tie(m_Size_r, m_Size_c) = dst.shape();
 
         for (size_t i = 0; i < m_Size_r; ++i) {
-            std::copy(src.Mat[i], src.Mat[i] + m_Size_c, dst.Mat[i]);
-            
+            std::copy(src[i], src[i] + m_Size_c, dst[i]);
         }
         return true;
     }
 
 
-    // LU分解
-    std::tuple<Matrix,Matrix> LU(const Matrix& Mat)
-    {
-        size_t _mSize_r, _mSize_c;
-        std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        assert(_mSize_r > 0 && _mSize_r == _mSize_c);
-
-        Matrix L = EYE(_mSize_r);
-        Matrix U(Mat);
-        
-        for (size_t i = 0; i < _mSize_r; ++i) {
-            //U中 i列下方元素变为0；
-            for (size_t j = i + 1; j < _mSize_r; ++j) {
-                L[j][i] = U[j][i] / U[i][i];
-                double ele = U[j][i] / U[i][i];
-                for (size_t k = 0; k < _mSize_c; ++k) {
-                    U[j][k] = U[j][k] - U[i][k] * ele;
-                }
-                
-            }
-        }
-        return std::make_tuple(L,U);
-    }
-
-    std::tuple<Matrix, Matrix> LU2(const Matrix& Mat)
+    std::tuple<Matrix, Matrix> LU(const Matrix& Mat)
     {
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
@@ -1184,7 +1155,7 @@ namespace bzx2 {
         }
     }
 
-    void row_swap_PLU(Matrix& Mat, size_t i, size_t ii,size_t col_index,bool Left=true) {
+    void row_swap_PLU(Matrix& Mat, size_t i, size_t ii,size_t col_index,bool Left) {
         
         if (Left) {
             for (size_t j = 0; j <= col_index; ++j) {
