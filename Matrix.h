@@ -13,12 +13,12 @@
 #include <random>
 #include <ctime>
 #include <tuple>
-#include <thread>
 
-namespace bzx2 {
+namespace bzx {
 
     constexpr double PI = 3.1415926;
     constexpr double DMIN = std::numeric_limits<double>::min();  // double min
+    constexpr double DMAX = std::numeric_limits<double>::max();
 
     class Matrix;
     // 记录当前矩阵描述信息
@@ -32,15 +32,44 @@ namespace bzx2 {
         size_t row_size = 0;
         size_t col_size = 0;
         size_t use_counter = 0;   //当作为指针传递时，记录被引用数量
-        std::vector<Matrix*> memAsyc;
+        std::vector<Matrix*> memAsyc;  //全局矩阵的更新
     };  
+
+    /*
+        计时器，为了自己方便计算用时
+    */
+    class Timer {
+    public:
+        Timer() = default;
+        void SetTimer() { Clock = clock(); Running = true; };
+        double Stop() {
+            if (Running) {
+                Running = false;
+                return 1.0 * (clock() - Clock) / CLOCKS_PER_SEC;
+            }
+            return -1;
+        }
+        double StopAndAgaing() {
+            if (Running) {
+                return 1.0 * (clock() - Clock) / CLOCKS_PER_SEC;
+            }
+            return -1;
+        }
+    private:
+        time_t Clock;
+        bool Running = false;
+    };
+
 
     Matrix operator+(const Matrix& Mat, const Matrix& Mat2);
     Matrix operator-(const Matrix& Mat, const Matrix& Mat2);
     Matrix operator/(const Matrix& Mat, const double& num);
+    std::ostream& operator<<(std::ostream& out, const Matrix& m);
+    Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // 叉乘
+
     Matrix SQRT(const Matrix& Mat);  
     double MAX(const Matrix& Mat);
-    Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // 叉乘
+    double MIN(const Matrix& Mat);
     Matrix DOT(const Matrix& Mat, const Matrix& Mat2);
     Matrix DOT(const Matrix& Mat, const double& num);
     Matrix INVERSE(const Matrix& Mat);
@@ -52,23 +81,28 @@ namespace bzx2 {
     Matrix DIAGONAL(const size_t& rs, const size_t& cs, const Matrix& Mat);
     Matrix EYE(const size_t& rs, const size_t& cs);
     Matrix EYE(const size_t& _size);
-    Matrix RAND_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
+    Matrix RandI_Matrix(const size_t& rs, const size_t& cs, const int& low, const int& high);
+    Matrix RandD_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
+    Matrix RandN_Matrix(const size_t& rs, const size_t& cs);
+    Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
     double DETERMINANT(const Matrix& Mat);
     Matrix TRANSPOSITION(const Matrix& Mat);
     std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat);
     std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat);
     std::tuple<Matrix, Matrix> EigenDec(const Matrix& Mat);
     std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta, const size_t& max_iter);
-    bool fast_copy(Matrix& dst, const Matrix& src);
-    std::ostream& operator<<(std::ostream& out, const Matrix& m);
     std::tuple<Matrix, Matrix> QR(const Matrix& Mat);
     double Norm_2(const Matrix& Mat);
     std::tuple<Matrix, Matrix, Matrix> PLU(const Matrix& Mat);
-    void row_swap_PLU(Matrix& Mat, size_t i, size_t ii, size_t col_index, bool Left = true);
-    void row_swap(Matrix& Mat, size_t i, size_t ii);
     std::tuple<Matrix, Matrix> LU(const Matrix& Mat);
 
-    class Matrix {
+    // 功能函数
+    bool fast_copy(Matrix& dst, const Matrix& src);
+    void row_swap_PLU(Matrix& Mat, size_t i, size_t ii, size_t col_index, bool Left = true);
+    void row_swap(Matrix& Mat, size_t i, size_t ii);
+
+
+    class Matrix{
         // double version
         friend std::ostream& operator<<(std::ostream& out, const Matrix& m);
     public:
@@ -89,48 +123,26 @@ namespace bzx2 {
         bool memAsycEqual(const Matrix& Mat);
         int use_count()const;
         bool part_set(const Matrix& Mat, const size_t _Low_r, const size_t& _High_r, const size_t& _Low_c, const size_t& _High_c);
-
-
         Matrix& TRANS();
         std::tuple<size_t, size_t> shape() const;
-
         ~Matrix();
-
     private:
         double** Mat = NULL; // 2d
         Matrixdsec* MDesc = NULL;
 
     };
 
-    
-    class Timer {
-    public:
-        Timer() = default;
-        void SetTimer() { Clock = clock(); Running = true; };
-        double Stop() { 
-            if (Running) {
-                Running = false;
-                return 1.0*(clock() - Clock)/CLOCKS_PER_SEC;
-            }
-            return -1;
-        }
-        double StopAndAgaing() {
-            if (Running) {
-                return 1.0 * (clock() - Clock) / CLOCKS_PER_SEC;
-            }
-            return -1;
-        }
-    private:
-        time_t Clock;
-        bool Running = false;
-    };
 
+    /*
+        返回矩阵的行和列
+    */
     std::tuple<size_t, size_t> Matrix::shape() const
     {
         if (this->MDesc == NULL) {
             return std::make_tuple(0, 0);
         }
         return std::make_tuple(this->MDesc->row_size, this->MDesc->col_size);
+        
     }
 
     Matrix::~Matrix() {
@@ -139,12 +151,13 @@ namespace bzx2 {
     
 
     /*
-        返回矩阵内存被使用数量
+        返回矩阵内存被使用数量,
     */
     int Matrix::use_count()const {
         if (this->MDesc == NULL) {
             return -1;
         }
+        
         return this->MDesc->use_counter;
     }
 
@@ -181,7 +194,6 @@ namespace bzx2 {
     void Matrix::operator+=(const Matrix& Mat) {
         *this = &(*this + Mat);
     }
-
     void Matrix::operator-=(const Matrix& Mat) {
         *this = &(*this - Mat);
     }
@@ -243,7 +255,7 @@ namespace bzx2 {
         return *this;
     }
 
-    // 指针
+    // 指针更新赋值
     Matrix& Matrix::operator=(Matrix* Mat) {
         if (this->Mat == Mat->Mat) {
             return *this;
@@ -268,7 +280,6 @@ namespace bzx2 {
 
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
         std::tie(_m2Size_r, _m2Size_c) = Mat2.shape();
-
 
         assert(_mSize_c == _m2Size_r);
 
@@ -297,7 +308,9 @@ namespace bzx2 {
         return dst;
     }
 
-
+    /*
+        点乘
+        */
     Matrix DOT(const Matrix& Mat, const Matrix& Mat2) {
         size_t _mSize_r, _mSize_c;
         size_t _m2Size_r, _m2Size_c;
@@ -586,12 +599,17 @@ namespace bzx2 {
         return child;
     }
 
+    /*
+        根据索引返回数值
+    */
     double* Matrix::operator[](const size_t& index) {
         return this->Mat[index];
     }
     double* Matrix::operator[](const size_t& index) const {
         return this->Mat[index];
     }
+
+
     /*
         返回当前矩阵的子矩阵
         Low_r,Low_c必须小于当前矩阵行数或列数
@@ -746,8 +764,6 @@ namespace bzx2 {
         return res;
     }
 
-
-
     Matrix EYE(const size_t& rs, const size_t& cs) {
         Matrix res(rs, cs);
         for (size_t i = 0; i < rs && i < cs; ++i) {
@@ -756,28 +772,95 @@ namespace bzx2 {
 
         return res;
     }
-
-    Matrix RAND_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high) {
-        srand(unsigned(time(0)));
+    
+    /*
+        获得一个整型数值的矩阵；
+    */
+    Matrix RandI_Matrix(const size_t& rs, const size_t& cs, const int& low, const int& high) {
         size_t j = 0;
         Matrix res(rs, cs);
+        std::default_random_engine e(time(0));
+        std::uniform_int_distribution<int> u(low, high);
+
         __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
             for (j = 0; j + 4 <= cs; j += 4) {
-                m256 = _mm256_set_pd(
-                    rand() % int(high - low + 1) + low,
-                    rand() % int(high - low + 1) + low,
-                    rand() % int(high - low + 1) + low,
-                    rand() % int(high - low + 1) + low);
+                m256 = _mm256_set_pd(u(e), u(e), u(e), u(e));
                 _mm256_store_pd(res[i] + j, m256);
             }
             while (j < cs) {
-                res[i][j] = rand() % int(high - low + 1) + low;
+                res[i][j] = res[i][j] = u(e);
                 ++j;
             }
         }
         return res;
     }
+
+    Matrix RandD_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high)
+    {
+        std::default_random_engine e(time(0));
+        std::uniform_real_distribution<double> u(low,high);
+        size_t j = 0;
+        Matrix res(rs, cs);
+        __m256d m256;
+        for (size_t i = 0; i < rs; ++i) {
+            for (j = 0; j+4 <= cs; j+=4) {
+                m256 = _mm256_set_pd(u(e),u(e), u(e), u(e));
+                _mm256_store_pd(res[i] + j, m256);
+            }
+            while (j < cs) {
+                res[i][j] = u(e);
+                ++j;
+            }
+        }
+
+        return res;
+    }
+    /*
+        生成一个rs,cs大小的（0，1）正态矩阵
+    */
+    Matrix RandN_Matrix(const size_t& rs, const size_t& cs)
+    {
+        std::default_random_engine e(time(0));
+        std::normal_distribution<double> u(0,1);
+        size_t j = 0;
+        Matrix res(rs, cs);
+        __m256d m256;
+        for (size_t i = 0; i < rs; ++i) {
+            for (j = 0; j + 4 <= cs; j += 4) {
+                m256 = _mm256_set_pd(u(e), u(e), u(e), u(e));
+                _mm256_store_pd(res[i] + j, m256);
+            }
+            while (j < cs) {
+                res[i][j] = u(e);
+                ++j;
+            }
+        }
+
+        return res;
+    }
+
+    Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high)
+    {
+        std::default_random_engine e(time(0));
+        std::normal_distribution<double> u(low, high);
+        size_t j = 0;
+        Matrix res(rs, cs);
+        __m256d m256;
+        for (size_t i = 0; i < rs; ++i) {
+            for (j = 0; j + 4 <= cs; j += 4) {
+                m256 = _mm256_set_pd(u(e), u(e), u(e), u(e));
+                _mm256_store_pd(res[i] + j, m256);
+            }
+            while (j < cs) {
+                res[i][j] = u(e);
+                ++j;
+            }
+        }
+
+        return res;
+    }
+
 
     /*
      *  行列式
@@ -850,6 +933,9 @@ namespace bzx2 {
         return JACOBI(Mat);
     }
 
+    /*
+        返回矩阵最大值
+    */
     double MAX(const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
@@ -868,6 +954,33 @@ namespace bzx2 {
                 ++j;
             }
             max_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
+        }
+        return res;
+    }
+
+    /*
+        返回矩阵最小值
+    */
+    
+    double MIN(const Matrix& Mat)
+    {
+        size_t _mSize_r, _mSize_c;;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        double tmp[4] = { DMAX,DMAX,DMAX,DMAX };
+        __m256d max_256 = _mm256_set_pd(DMAX, DMAX, DMAX, DMAX);
+        double res = DMAX;
+        size_t j = 0;
+        for (size_t i = 0; i < _mSize_r; ++i) {
+            for (j = 0; j + 4 <= _mSize_c; j += 4) {
+                max_256 = _mm256_min_pd(_mm256_load_pd(Mat[i] + j), max_256);
+            }
+            _mm256_store_pd(tmp, max_256);
+            res = std::min(res, std::min(std::min(tmp[0], tmp[1]), std::min(tmp[2], tmp[3])));
+            while (j < _mSize_c) {
+                res = std::min(res, Mat[i][j]);
+                ++j;
+            }
+            max_256 = _mm256_set_pd(DMAX, DMAX, DMAX, DMAX);
         }
         return res;
     }
@@ -1036,9 +1149,9 @@ namespace bzx2 {
         return dst;
     }
 
-    // 拷贝赋值
     /*
         此函数功能类似与share_ptr中的reset(ELE)函数。
+        
     */
     bool Matrix::memAsycEqual(const Matrix& Mat) {
         // 指向同一内存地址
@@ -1046,7 +1159,7 @@ namespace bzx2 {
             return true;
         }
         
-        // 若两个矩阵大小一致，则使用函数fast_copy();
+        // 若两个矩阵大小一致，则使用函数fast_copy();不重新分配内存
         if (this->shape() == Mat.shape()) {
             fast_copy(*this, Mat);
             return true;
@@ -1110,7 +1223,9 @@ namespace bzx2 {
         return true;
     }
 
-
+    /*
+        计算矩阵的LU分解
+    */
     std::tuple<Matrix, Matrix> LU(const Matrix& Mat)
     {
         size_t _mSize_r, _mSize_c;
@@ -1144,17 +1259,23 @@ namespace bzx2 {
         }
         return std::make_tuple(L, U);
     }
-
     
 
+    /*
+        交换矩阵第i行与第ii行
+    */
     void row_swap(Matrix& Mat, size_t i, size_t ii) {
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        assert(i < _mSize_r && ii < _mSize_r);
         for (size_t j = 0; j < _mSize_c; ++j) {
             std::swap(Mat[i][j], Mat[ii][j]);
         }
     }
 
+    /*
+        为计算LU分解进行修改的行交换函数
+    */
     void row_swap_PLU(Matrix& Mat, size_t i, size_t ii,size_t col_index,bool Left) {
         
         if (Left) {
@@ -1171,6 +1292,9 @@ namespace bzx2 {
         }
     }
 
+    /*
+        计算矩阵的PLU分解
+    */
     std::tuple<Matrix, Matrix, Matrix> PLU(const Matrix& Mat)
     {
         size_t _mSize_r, _mSize_c;
@@ -1259,7 +1383,7 @@ namespace bzx2 {
 
    
     /*
-        格里姆施密特正交法
+        格里姆施密特正交法计
     */
     std::tuple<Matrix,Matrix> QR(const Matrix& Mat) {
         
