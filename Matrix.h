@@ -19,6 +19,11 @@ namespace bzx {
     constexpr double PI = 3.1415926;
     constexpr double DMIN = std::numeric_limits<double>::min();  // double min
     constexpr double DMAX = std::numeric_limits<double>::max();
+    constexpr double PRECISION = 1e-10;   // JACOBI
+    constexpr double DETERMINANT_PRECISION = 1e-8;
+    constexpr double MIN_DELTA = 1e-5;  // Power_Method
+    constexpr size_t MAX_ITER = int(1e4);   // JACOBI,Power_Method
+    constexpr double OUT_PRECISION = 1e-8;  // 输出时当绝对值小于此值，则输出为0；
 
     class Matrix;
     // 记录当前矩阵描述信息
@@ -83,14 +88,14 @@ namespace bzx {
     Matrix EYE(const size_t& _size);
     Matrix RandI_Matrix(const size_t& rs, const size_t& cs, const int& low, const int& high);
     Matrix RandD_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
-    Matrix RandN_Matrix(const size_t& rs, const size_t& cs);
-    Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high);
+    Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& M=0.0, const double& S2=1.0);
     double DETERMINANT(const Matrix& Mat);
+    std::tuple<size_t, Matrix> Rank(const Matrix& Mat);
     Matrix TRANSPOSITION(const Matrix& Mat);
     std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat);
     std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat);
     std::tuple<Matrix, Matrix> EigenDec(const Matrix& Mat);
-    std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta, const size_t& max_iter);
+    std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta = MIN_DELTA, const size_t& max_iter= MAX_ITER);
     std::tuple<Matrix, Matrix> QR(const Matrix& Mat);
     double Norm_2(const Matrix& Mat);
     std::tuple<Matrix, Matrix, Matrix> PLU(const Matrix& Mat);
@@ -539,11 +544,17 @@ namespace bzx {
     std::ostream& operator<<(std::ostream& out, const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        
         out << "[";
         for (size_t i = 0; i < _mSize_r; ++i) {
             out << " ";
             for (size_t j = 0; j < _mSize_c; ++j) {
-                out << Mat[i][j] << " ";
+                if (abs(Mat[i][j]) < OUT_PRECISION) {
+                    out <<0<<" ";
+                }
+                else {
+                    out << Mat[i][j] << " ";
+                }
             }
             if (i + 1 == _mSize_r) {
                 out << "] , (" << _mSize_r << ", " << _mSize_c << ")";
@@ -779,17 +790,17 @@ namespace bzx {
     Matrix RandI_Matrix(const size_t& rs, const size_t& cs, const int& low, const int& high) {
         size_t j = 0;
         Matrix res(rs, cs);
-        std::default_random_engine e(time(0));
-        std::uniform_int_distribution<int> u(low, high);
+        std::random_device rd;
+        std::uniform_int_distribution<int> dist(low, high);
 
         __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
             for (j = 0; j + 4 <= cs; j += 4) {
-                m256 = _mm256_set_pd(u(e), u(e), u(e), u(e));
+                m256 = _mm256_set_pd(dist(rd), dist(rd), dist(rd), dist(rd));
                 _mm256_store_pd(res[i] + j, m256);
             }
             while (j < cs) {
-                res[i][j] = res[i][j] = u(e);
+                res[i][j] = res[i][j] = dist(rd), dist(rd), dist(rd), dist(rd);
                 ++j;
             }
         }
@@ -798,18 +809,18 @@ namespace bzx {
 
     Matrix RandD_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high)
     {
-        std::default_random_engine e(time(0));
-        std::uniform_real_distribution<double> u(low,high);
+        std::random_device rd;
+        std::uniform_real_distribution<double> dist(low,high);
         size_t j = 0;
         Matrix res(rs, cs);
         __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
             for (j = 0; j+4 <= cs; j+=4) {
-                m256 = _mm256_set_pd(u(e),u(e), u(e), u(e));
+                m256 = _mm256_set_pd(dist(rd), dist(rd), dist(rd), dist(rd));
                 _mm256_store_pd(res[i] + j, m256);
             }
             while (j < cs) {
-                res[i][j] = u(e);
+                res[i][j] = dist(rd);
                 ++j;
             }
         }
@@ -817,43 +828,23 @@ namespace bzx {
         return res;
     }
     /*
-        生成一个rs,cs大小的（0，1）正态矩阵
+        生成一个rs,cs大小的（M,S2）分布的正态矩阵
     */
-    Matrix RandN_Matrix(const size_t& rs, const size_t& cs)
+
+    Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& M, const double& S2)
     {
-        std::default_random_engine e(time(0));
-        std::normal_distribution<double> u(0,1);
+        std::random_device rd;
+        std::normal_distribution<double> dist(M,S2);
         size_t j = 0;
         Matrix res(rs, cs);
         __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
             for (j = 0; j + 4 <= cs; j += 4) {
-                m256 = _mm256_set_pd(u(e), u(e), u(e), u(e));
+                m256 = _mm256_set_pd(dist(rd), dist(rd), dist(rd), dist(rd));
                 _mm256_store_pd(res[i] + j, m256);
             }
             while (j < cs) {
-                res[i][j] = u(e);
-                ++j;
-            }
-        }
-
-        return res;
-    }
-
-    Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high)
-    {
-        std::default_random_engine e(time(0));
-        std::normal_distribution<double> u(low, high);
-        size_t j = 0;
-        Matrix res(rs, cs);
-        __m256d m256;
-        for (size_t i = 0; i < rs; ++i) {
-            for (j = 0; j + 4 <= cs; j += 4) {
-                m256 = _mm256_set_pd(u(e), u(e), u(e), u(e));
-                _mm256_store_pd(res[i] + j, m256);
-            }
-            while (j < cs) {
-                res[i][j] = u(e);
+                res[i][j] = dist(rd);
                 ++j;
             }
         }
@@ -892,7 +883,7 @@ namespace bzx {
             }
             res += (subMat[0][j] * (pow(-1, j) * DETERMINANT(new_subMat)));
         }
-        return abs(res - (1e-5)) > 0 ? res : 0;
+        return abs(res - (DETERMINANT_PRECISION)) > 0 ? res : 0;
     }
 
     /*
@@ -1017,12 +1008,10 @@ namespace bzx {
         Matrix UT; // U's trans
         Matrix EigenValue(_mSize_r, 1);
         Matrix copy_Mat = Mat; 
-        size_t MAX_Iter = size_t(1e4);     // 控制迭代次数
         size_t Iter = 0;
         double dbangle, sintheta, costheta;
-        double precision = 1e-10;  // 控制精度
 
-        while (Iter < MAX_Iter)
+        while (Iter < MAX_ITER)
         {
             // 寻找非对角线元素最大值，及位置
             double non_dia_max_value_abs = abs(copy_Mat[0][1]);
@@ -1039,7 +1028,7 @@ namespace bzx {
             }
 
             // 检车是否需要退出循环
-            if (non_dia_max_value_abs < precision) {
+            if (non_dia_max_value_abs < PRECISION) {
                 break;
             }
 
@@ -1088,11 +1077,11 @@ namespace bzx {
                     _max_index = j;
                     _max_value = EigenValue[j][0];
                 }
-                if (abs(EigenVector[i][j]) < precision) {
+                if (abs(EigenVector[i][j]) < PRECISION) {
                     EigenVector[i][j] = 0;
                 }
             }
-            if (abs(EigenValue[i][0]) < precision) {
+            if (abs(EigenValue[i][0]) < PRECISION) {
                 EigenValue[i][0] = 0;
             }
             tmp = EigenValue[i][0];
@@ -1108,7 +1097,7 @@ namespace bzx {
     /*
      *  返回一对特征值与特征向量
      */
-    std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta = 1e-5, const size_t& max_iter = 1e3) {
+    std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta,const size_t& max_iter) {
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
         assert(_mSize_r == _mSize_c); // row_size,col_size
@@ -1372,6 +1361,84 @@ namespace bzx {
         return std::make_tuple(P, L, U);
     }
 
+    /*
+        计算矩阵的秩
+    */
+    std::tuple<size_t,Matrix> Rank(const Matrix& Mat) {
+        size_t rank = 0;
+        
+        size_t _mSize_r, _mSize_c;
+        std::tie(_mSize_r, _mSize_c) = Mat.shape();
+        // assert(_mSize_r > 0 && _mSize_r == _mSize_c);
+
+        Matrix U(Mat);
+        size_t max_row_index;
+        size_t current_col = 0;
+        size_t i = 0;
+        __m256d m256D;
+        double ele;
+
+        for (i = 0; i < _mSize_r && current_col < _mSize_c; ++i) {
+            // 寻找该列最大值
+            max_row_index = i;
+
+            for (; current_col < _mSize_c; ++current_col) {
+                for (size_t m = i; m < _mSize_r; ++m) {
+                    if (U[max_row_index][current_col] < U[m][current_col]) {
+                        max_row_index = m;
+                    }
+                }
+
+                if (U[max_row_index][current_col] != 0) {
+                    break;
+                }
+            }
+
+            if (current_col == _mSize_c || max_row_index == _mSize_r) {
+                break;
+            }
+
+            // 交换该轮次最大值行
+            if (max_row_index != i) {
+                row_swap_PLU(U, i, max_row_index, current_col, false);
+            }
+
+            //U中 i列下方元素变为0；
+            for (size_t j = i + 1; j < _mSize_r; ++j) {
+                ele = U[j][current_col] / U[i][current_col];
+                m256D = _mm256_set_pd(ele, ele, ele, ele);
+                size_t k = 0;
+                for (k = current_col; k + 4 <= _mSize_c; k += 4) {
+                    _mm256_store_pd(U[j] + k, _mm256_sub_pd(
+                        _mm256_load_pd(U[j] + k),
+                        _mm256_mul_pd(_mm256_load_pd(U[i] + k), m256D)
+                    ));
+                }
+                while (k < _mSize_c) {
+                    U[j][k] -= (U[i][k] * ele);
+                    ++k;
+                }
+            }
+            current_col += 1;
+        }
+
+        current_col = 0;
+        for (i = 0; i < _mSize_r; ++i) {
+            for (current_col=0; current_col < _mSize_c;++current_col) {
+                if (abs(U[i][current_col]) < PRECISION) {
+                    U[i][current_col] = 0;
+                }
+                if (U[i][current_col] != 0) {
+                    rank += 1;
+                    break;
+                }
+            }
+            current_col += 1;
+        }
+
+        return std::make_tuple(rank,U);
+    }
+
 
     // 2范数,[1,n]
     double Norm_2(const Matrix& Mat) {
@@ -1383,7 +1450,7 @@ namespace bzx {
 
    
     /*
-        格里姆施密特正交法计
+        格里姆施密特正交法计算QR分解
     */
     std::tuple<Matrix,Matrix> QR(const Matrix& Mat) {
         
@@ -1399,18 +1466,18 @@ namespace bzx {
         double norm_2 = 0;
         for (j = 0; j < _mSize_c; ++j) {
             // y = A[][j]
-            y = Mat(-1, j);
+            y = &Mat(-1, j);
             // q(i)
             
             for (i = 0; j>0 && i < j; ++i) {
-                q = Q(-1, i);
+                q = &Q(-1, i);
                 yT = &(TRANSPOSITION(q) * y);
                 R[i][j] = yT[0][0];
-                y -= DOT(q, R[i][j]); //y -= (q * R[i][j]);
+                y = &(y - DOT(q, R[i][j])); //y -= (q * R[i][j]);
             }
             norm_2 = Norm_2(y);
             R[j][j] = norm_2;
-            q = y / norm_2;
+            q = &(y / norm_2);
             Q.part_set(q, 0, -1, j, j + 1);
         }
         return std::make_tuple(Q, R);
