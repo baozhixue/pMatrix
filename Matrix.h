@@ -14,6 +14,7 @@
 #include <ctime>
 #include <tuple>
 #include <string>
+#include <list>
 
 namespace bzx {
 
@@ -24,10 +25,10 @@ namespace bzx {
     constexpr double DETERMINANT_PRECISION = 1e-8;
     constexpr double MIN_DELTA = 1e-5;  // Power_Method
     constexpr size_t MAX_ITER = int(1e4);   // JACOBI,Power_Method
-    constexpr double OUT_PRECISION = 1e-8;  // Êä³öÊ±µ±¾ø¶ÔÖµĞ¡ÓÚ´ËÖµ£¬ÔòÊä³öÎª0£»
+    constexpr double OUT_PRECISION = 1e-8;  // è¾“å‡ºæ—¶å½“ç»å¯¹å€¼å°äºæ­¤å€¼ï¼Œåˆ™è¾“å‡ºä¸º0ï¼›
 
     class Matrix;
-    // ¼ÇÂ¼µ±Ç°¾ØÕóÃèÊöĞÅÏ¢
+    // è®°å½•å½“å‰çŸ©é˜µæè¿°ä¿¡æ¯
     class Matrixdsec {
     public:
         Matrixdsec(size_t rs, size_t cs, size_t uc) {
@@ -37,8 +38,8 @@ namespace bzx {
         }
         size_t row_size = 0;
         size_t col_size = 0;
-        size_t use_counter = 0;   //µ±×÷ÎªÖ¸Õë´«µİÊ±£¬¼ÇÂ¼±»ÒıÓÃÊıÁ¿
-        std::vector<Matrix*> memAsyc;  //È«¾Ö¾ØÕóµÄ¸üĞÂ
+        size_t use_counter = 0;   //å½“ä½œä¸ºæŒ‡é’ˆä¼ é€’æ—¶ï¼Œè®°å½•è¢«å¼•ç”¨æ•°é‡
+        std::vector<Matrix*> memAsyc;  //å…¨å±€çŸ©é˜µçš„æ›´æ–°
     };  
 
     Matrix operator+(const Matrix& Mat, const Matrix& Mat2);
@@ -51,7 +52,7 @@ namespace bzx {
     Matrix operator>=(const Matrix& Mat, const Matrix& Mat2);
     Matrix operator<=(const Matrix& Mat, const Matrix& Mat2);
     std::ostream& operator<<(std::ostream& out, const Matrix& m);
-    Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // ²æ³Ë
+    Matrix operator*(const Matrix& Mat, const Matrix& Mat2);   // å‰ä¹˜
 
     Matrix SQRT(const Matrix& Mat);  
     double MAX(const Matrix& Mat);
@@ -83,11 +84,14 @@ namespace bzx {
     Matrix Ceil(const Matrix& Mat);
     Matrix Floor(const Matrix& Mat);
     Matrix MMul(std::initializer_list <Matrix> Mats);
-    // ¹¦ÄÜº¯Êı
+    // åŠŸèƒ½å‡½æ•°
     bool fast_copy(Matrix& dst, const Matrix& src);
     void row_swap_PLU(Matrix& Mat, size_t i, size_t ii, size_t col_index, bool Left = true);
     void row_swap(Matrix& Mat, size_t i, size_t ii);
 
+    /*
+        åŒç²¾åº¦doubleçŸ©é˜µ       
+    */
     class Matrix{
         // double version
         friend std::ostream& operator<<(std::ostream& out, const Matrix& m);
@@ -114,6 +118,7 @@ namespace bzx {
         std::tuple<size_t, size_t> shape() const;
         void CEIL() { *this = &Ceil(*this); };
         void FLOOR() { *this = &Floor(*this); };
+
         ~Matrix();
     private:
         double** Mat = NULL; // 2d
@@ -121,9 +126,8 @@ namespace bzx {
 
     };
 
-
     /*
-        ·µ»Ø¾ØÕóµÄĞĞºÍÁĞ
+        è¿”å›çŸ©é˜µçš„è¡Œå’Œåˆ—
     */
     std::tuple<size_t, size_t> Matrix::shape() const
     {
@@ -140,7 +144,7 @@ namespace bzx {
     
 
     /*
-        ·µ»Ø¾ØÕóÄÚ´æ±»Ê¹ÓÃÊıÁ¿,
+        è¿”å›çŸ©é˜µå†…å­˜è¢«ä½¿ç”¨æ•°é‡,
     */
     int Matrix::use_count()const {
         if (this->MDesc == NULL) {
@@ -152,7 +156,7 @@ namespace bzx {
 
 
     /*
-        Èôusecounter¼ÆÊıÎª0£¬ÔòÊÍ·ÅËùÊôÄÚ´æ;·ñÔò£¬½ö½«Ö¸ÕëÖÃÎªNULL
+        è‹¥usecounterè®¡æ•°ä¸º0ï¼Œåˆ™é‡Šæ”¾æ‰€å±å†…å­˜;å¦åˆ™ï¼Œä»…å°†æŒ‡é’ˆç½®ä¸ºNULL
     */
     void Matrix::clear() {
         //std::cout << "ready clear!\n";
@@ -191,7 +195,7 @@ namespace bzx {
     }
 
     /*
-     * @ Purpose  £º¿½±´¸³Öµ
+     * @ Purpose  ï¼šæ‹·è´èµ‹å€¼
      */
     Matrix& Matrix::operator=(const Matrix& Mat) {
 
@@ -199,14 +203,14 @@ namespace bzx {
             return *this;
         }
 
-        //ÖØĞÂÖ¸ÏòĞÂµÄÄÚ´æ
+        //é‡æ–°æŒ‡å‘æ–°çš„å†…å­˜
         if (this->MDesc==NULL || this->MDesc->use_counter <=1) {
             if (this->shape() == Mat.shape()) {
                 fast_copy(*this, Mat);
                 return *this;
             }
             clear();
-            // ÄÚ´æÎªNULL
+            // å†…å­˜ä¸ºNULL
             
             size_t _mSize_r, _mSize_c;
             std::tie(_mSize_r, _mSize_c) = Mat.shape();
@@ -239,7 +243,7 @@ namespace bzx {
             this->MDesc->memAsyc.push_back(this);
         }
         else {
-            // ¸üĞÂËùÓĞÖ¸ÕëËùÖ¸µÄµØÖ·
+            // æ›´æ–°æ‰€æœ‰æŒ‡é’ˆæ‰€æŒ‡çš„åœ°å€
             this->memAsycEqual(Mat);
         }
         
@@ -247,14 +251,14 @@ namespace bzx {
     }
 
     /*
-     * @ Purpose  Ö¸Õë¸üĞÂ¸³Öµ
+     * @ Purpose  æŒ‡é’ˆæ›´æ–°èµ‹å€¼
      */
     Matrix& Matrix::operator=(Matrix* Mat) {
         if (this->Mat == Mat->Mat) {
             return *this;
         }
         Mat->MDesc->use_counter += 1;
-        clear(); // ¸üĞÂusecounter
+        clear(); // æ›´æ–°usecounter
         this->Mat = Mat->Mat;
         this->MDesc = Mat->MDesc;
         this->MDesc->memAsyc.push_back(this);
@@ -264,8 +268,8 @@ namespace bzx {
 
 
     /*
-     * @ Purpose :¼ÆËãMatÓëMat2µÄ¾ØÕó²æ³Ë
-     * @ Return : ½á¹û¾ØÕó  
+     * @ Purpose :è®¡ç®—Matä¸Mat2çš„çŸ©é˜µå‰ä¹˜
+     * @ Return : ç»“æœçŸ©é˜µ  
      */
     Matrix operator*(const Matrix& Mat, const Matrix& Mat2) {
 
@@ -305,9 +309,9 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ¼ÆËã¾ØÕóÓë¾ØÕóµÄµã³Ë
-        @ Return  £º ¾ØÕó
-        @ Other £ºMat2ÓëMatµÄĞĞÁĞÊıÒ»ÖÂ£¬»òMat2µÄĞĞÊıÓëMatĞĞÊıÒ»ÖÂÇÒÁĞÊıÎª1
+        @ Purpose : è®¡ç®—çŸ©é˜µä¸çŸ©é˜µçš„ç‚¹ä¹˜
+        @ Return  ï¼š çŸ©é˜µ
+        @ Other ï¼šMat2ä¸Matçš„è¡Œåˆ—æ•°ä¸€è‡´ï¼Œæˆ–Mat2çš„è¡Œæ•°ä¸Matè¡Œæ•°ä¸€è‡´ä¸”åˆ—æ•°ä¸º1
     */
     Matrix DOT(const Matrix& Mat, const Matrix& Mat2) {
         size_t _mSize_r, _mSize_c;
@@ -355,8 +359,8 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ¼ÆËã¾ØÕóÓëÊıÖµµÄµã³Ë
-        @ Return  £º ¾ØÕó
+        @ Purpose : è®¡ç®—çŸ©é˜µä¸æ•°å€¼çš„ç‚¹ä¹˜
+        @ Return  ï¼š çŸ©é˜µ
     */
     Matrix DOT(const Matrix& Mat, const double& num) {
         size_t _mSize_r, _mSize_c;
@@ -378,8 +382,8 @@ namespace bzx {
 
 
     /*
-        @ Purpose :¾ØÕó³ıÒÔÒ»¸öÊıÖµ
-        @ Return :¾ØÕó
+        @ Purpose :çŸ©é˜µé™¤ä»¥ä¸€ä¸ªæ•°å€¼
+        @ Return :çŸ©é˜µ
     */
     Matrix operator/(const Matrix& Mat, const double& num) {
         if (num == 0) {
@@ -404,7 +408,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose :¾ØÕó¼Ó·¨
+        @ Purpose :çŸ©é˜µåŠ æ³•
     */
     Matrix operator+(const Matrix& Mat, const Matrix& Mat2) {
         if (Mat.shape() != Mat2.shape())
@@ -429,7 +433,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose :¾ØÕó¼õ·¨
+        @ Purpose :çŸ©é˜µå‡æ³•
     */
     Matrix operator-(const Matrix& Mat, const Matrix& Mat2) {
         if (Mat.shape() != Mat2.shape())
@@ -454,14 +458,14 @@ namespace bzx {
     }
 
     /*
-        @ Purpose :´´½¨Ò»¸ö[_row_size,_col_size]µÄÒÔinit_numÎª³õÊ¼ÖµµÄ¾ØÕó
+        @ Purpose :åˆ›å»ºä¸€ä¸ª[_row_size,_col_size]çš„ä»¥init_numä¸ºåˆå§‹å€¼çš„çŸ©é˜µ
     */
     Matrix::Matrix(const size_t &_row_size, const size_t& _col_size, const double &init_num) {
         clear();
         this->MDesc = new Matrixdsec(_row_size, _col_size, 1);
         size_t  i = 0, j = 0;
 
-        // ·ÖÅäÄÚ´æ²¢³õÊ¼»¯
+        // åˆ†é…å†…å­˜å¹¶åˆå§‹åŒ–
         double** tmp2 = new double* [_row_size];
         double* tmp;
         if (tmp2 == NULL) {
@@ -488,7 +492,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ¸ù¾İsrc´´½¨Ò»¸öĞÂµÄ¾ØÕó
+        @ Purpose : æ ¹æ®srcåˆ›å»ºä¸€ä¸ªæ–°çš„çŸ©é˜µ
     */
     Matrix::Matrix(std::initializer_list<std::initializer_list<double >> src) {
 
@@ -532,7 +536,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose :ÒÔ¿½±´¸³ÖµµÄ¹¹Ôìº¯Êı
+        @ Purpose :ä»¥æ‹·è´èµ‹å€¼çš„æ„é€ å‡½æ•°
     */
     Matrix::Matrix(const Matrix& Mat) {
 
@@ -570,7 +574,7 @@ namespace bzx {
     }
 
     /*
-     * @ Purpose : ±ê×¼Êä³ö
+     * @ Purpose : æ ‡å‡†è¾“å‡º
      */
     std::ostream& operator<<(std::ostream& out, const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
@@ -599,14 +603,14 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ¸ù¾İ´«Èë¾ØÕóMat¸üĞÂ[Low_r,High_r)->[Low_c,High_c)Î»ÖÃµÄÊıÖµ
+        @ Purpose : æ ¹æ®ä¼ å…¥çŸ©é˜µMatæ›´æ–°[Low_r,High_r)->[Low_c,High_c)ä½ç½®çš„æ•°å€¼
         @ Para  :
                     Mat 
-                    [Low_r,High_r]->[Low_c,High_c] ×¼±¸¸üĞÂµÄÎ»ÖÃ
+                    [Low_r,High_r]->[Low_c,High_c] å‡†å¤‡æ›´æ–°çš„ä½ç½®
         @ Example :
                     Matrix A = {{1,2}};
                     Matrix B = {{5,5,3},{4,5,6}};
-                    B.part_set(A,0,1,0,2);  // ´ËÊ±B¸üĞÂÎª{{1,2,3},{4,5,6}}
+                    B.part_set(A,0,1,0,2);  // æ­¤æ—¶Bæ›´æ–°ä¸º{{1,2,3},{4,5,6}}
     */
     bool Matrix::part_set(const Matrix& Mat, const size_t _Low_r, const size_t &_High_r, const size_t &_Low_c, const size_t &_High_c) {
         size_t High_c, High_r;
@@ -628,13 +632,13 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ½ØÈ¡¾ØÕóµÄÄ³ĞĞ»òÄ³ÁĞ
+        @ Purpose : æˆªå–çŸ©é˜µçš„æŸè¡Œæˆ–æŸåˆ—
         @ Para  :
-                r, Èô´Ë²ÎÊıÎª-1£¬ÔòÈ¡ÏàÓ¦µÄcÁĞ
-                c£¬Èô´Ë²ÎÊıÎª-1£¬ÔòÈ¡ÏàÓ¦µÄrĞĞ
-        @ Other £º rÓëcÆäÖĞÒ»¸ö²ÎÊı±ØĞëÎª-1
-        @ Return £ºÄ³ĞĞ»òÄ³ÁĞµÄ¿½±´
-        @ Example£º
+                r, è‹¥æ­¤å‚æ•°ä¸º-1ï¼Œåˆ™å–ç›¸åº”çš„cåˆ—
+                cï¼Œè‹¥æ­¤å‚æ•°ä¸º-1ï¼Œåˆ™å–ç›¸åº”çš„rè¡Œ
+        @ Other ï¼š rä¸cå…¶ä¸­ä¸€ä¸ªå‚æ•°å¿…é¡»ä¸º-1
+        @ Return ï¼šæŸè¡Œæˆ–æŸåˆ—çš„æ‹·è´
+        @ Exampleï¼š
                 Matrix A = {{1,2,3},{4,5,6}};
                 Matrix B = A(-1,1);  // B={{2},{5}};
     */
@@ -664,8 +668,8 @@ namespace bzx {
     }
 
     /*
-        @ Purpose £º½«¾ØÕó×ªÎªstring·µ»Ø
-        @ Return £º string
+        @ Purpose ï¼šå°†çŸ©é˜µè½¬ä¸ºstringè¿”å›
+        @ Return ï¼š string
     */
     std::string Matrix::to_str() const{
         std::string res = "";
@@ -700,14 +704,14 @@ namespace bzx {
     }
 
     /*
-       @ Purpose  : ¸ù¾İË÷Òı·µ»ØÊıÖµ
+       @ Purpose  : æ ¹æ®ç´¢å¼•è¿”å›æ•°å€¼
     */
     double* Matrix::operator[](const size_t& index) {
         return this->Mat[index];
     }
     /*
-        @ Purpose  : ¸ù¾İË÷Òı·µ»ØÊıÖµ
-        @ Other : µ±¾ØÕóÒÔconst´«µİÊ±ĞèÒªÊ¹ÓÃ´Ëº¯Êı
+        @ Purpose  : æ ¹æ®ç´¢å¼•è¿”å›æ•°å€¼
+        @ Other : å½“çŸ©é˜µä»¥constä¼ é€’æ—¶éœ€è¦ä½¿ç”¨æ­¤å‡½æ•°
     */
     double* Matrix::operator[](const size_t& index) const {
         return this->Mat[index];
@@ -715,8 +719,8 @@ namespace bzx {
 
 
     /*
-        @ Purpose  : ·µ»Øµ±Ç°¾ØÕóµÄ×Ó¾ØÕó
-        @ Other    £ºLow_r,Low_c±ØĞëĞ¡ÓÚµ±Ç°¾ØÕóĞĞÊı»òÁĞÊı
+        @ Purpose  : è¿”å›å½“å‰çŸ©é˜µçš„å­çŸ©é˜µ
+        @ Other    ï¼šLow_r,Low_cå¿…é¡»å°äºå½“å‰çŸ©é˜µè¡Œæ•°æˆ–åˆ—æ•°
     */
     Matrix Matrix::operator()(const size_t& _Low_r, const size_t& _High_r,
         const size_t& _Low_c, const size_t& _High_c) const{
@@ -741,7 +745,7 @@ namespace bzx {
 
 
     /*
-     * @ Purpose  :×ªÖÃ¾ØÕó×ÔÉí
+     * @ Purpose  :è½¬ç½®çŸ©é˜µè‡ªèº«
      */
     Matrix& Matrix::TRANS() {
         *this = &TRANSPOSITION(*this);
@@ -770,7 +774,7 @@ namespace bzx {
 
 
     /*
-     * @ Purpose  : ÇóÄæ¾ØÕó
+     * @ Purpose  : æ±‚é€†çŸ©é˜µ
      */
     Matrix INVERSE(const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
@@ -789,7 +793,7 @@ namespace bzx {
     }
 
     /*
-     * @ Purpose  :·µ»ØMat¶Ô½ÇÏßÔªËØ
+     * @ Purpose  :è¿”å›Matå¯¹è§’çº¿å…ƒç´ 
      */
     Matrix DIAGONAL(const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
@@ -803,7 +807,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :ÒÔsrcÄÚÊıÖµ´´½¨Ò»¸ö[_size ,_size]¶Ô½Ç¾ØÕó
+        @ Purpose  :ä»¥srcå†…æ•°å€¼åˆ›å»ºä¸€ä¸ª[_size ,_size]å¯¹è§’çŸ©é˜µ
     */
     Matrix DIAGONAL(const size_t& _size, std::initializer_list<double> src) {
         Matrix res(_size, _size);
@@ -819,7 +823,7 @@ namespace bzx {
     }
 
     /*
-       @ Purpose  : ÒÔsrcÄÚÊıÖµ´´½¨Ò»¸ö[rs,cs]¶Ô½Ç¾ØÕó
+       @ Purpose  : ä»¥srcå†…æ•°å€¼åˆ›å»ºä¸€ä¸ª[rs,cs]å¯¹è§’çŸ©é˜µ
     */
     Matrix DIAGONAL(const size_t& rs, const size_t& cs, std::initializer_list<double> src) {
         Matrix res(rs, cs);
@@ -835,7 +839,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :¸ù¾İMatÄÚµÄÊıÖµ´´½¨Ò»¸ö¶Ô½Ç¾ØÕó£¬Mat±ØĞëÎª[1,n]Êı×é
+        @ Purpose  :æ ¹æ®Matå†…çš„æ•°å€¼åˆ›å»ºä¸€ä¸ªå¯¹è§’çŸ©é˜µï¼ŒMatå¿…é¡»ä¸º[1,n]æ•°ç»„
     */
     Matrix DIAGONAL(const size_t& _size, const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
@@ -853,7 +857,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :¸ù¾İMatÄÚµÄÊıÖµ´´½¨Ò»¸ö¶Ô½Ç¾ØÕó£¬Mat±ØĞëÎª[1,n]Êı×é
+        @ Purpose  :æ ¹æ®Matå†…çš„æ•°å€¼åˆ›å»ºä¸€ä¸ªå¯¹è§’çŸ©é˜µï¼ŒMatå¿…é¡»ä¸º[1,n]æ•°ç»„
     */
     Matrix DIAGONAL(const size_t& rs, const size_t& cs, const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
@@ -873,7 +877,7 @@ namespace bzx {
     }
 
     /*
-     * @ Purpose  :»ñµÃÒ»¸ö[_size,_size]´óĞ¡µÄµ¥Î»¶Ô½Ç¾ØÕó
+     * @ Purpose  :è·å¾—ä¸€ä¸ª[_size,_size]å¤§å°çš„å•ä½å¯¹è§’çŸ©é˜µ
      */
     Matrix EYE(const size_t& _size) {
         Matrix res(_size, _size);
@@ -884,7 +888,7 @@ namespace bzx {
     }
 
     /*
-     * @ Purpose  :»ñµÃÒ»¸ö[rs,cs]´óĞ¡µÄµ¥Î»¶Ô½Ç¾ØÕó
+     * @ Purpose  :è·å¾—ä¸€ä¸ª[rs,cs]å¤§å°çš„å•ä½å¯¹è§’çŸ©é˜µ
      */
     Matrix EYE(const size_t& rs, const size_t& cs) {
         Matrix res(rs, cs);
@@ -896,7 +900,7 @@ namespace bzx {
     }
     
     /*
-        @ Purpose  :Éú³ÉÒ»¸örs,cs´óĞ¡µÄ[low,high)µÄÕûĞÍËæ»úÊı¾ØÕó
+        @ Purpose  :ç”Ÿæˆä¸€ä¸ªrs,cså¤§å°çš„[low,high)çš„æ•´å‹éšæœºæ•°çŸ©é˜µ
     */
     Matrix RandI_Matrix(const size_t& rs, const size_t& cs, const int& low, const int& high) {
         size_t j = 0;
@@ -919,7 +923,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :Éú³ÉÒ»¸örs,cs´óĞ¡µÄ[low,high)µÄË«¾«¶ÈËæ»úÊı¾ØÕó
+        @ Purpose  :ç”Ÿæˆä¸€ä¸ªrs,cså¤§å°çš„[low,high)çš„åŒç²¾åº¦éšæœºæ•°çŸ©é˜µ
     */
     Matrix RandD_Matrix(const size_t& rs, const size_t& cs, const double& low, const double& high)
     {
@@ -943,7 +947,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :Éú³ÉÒ»¸örs,cs´óĞ¡µÄ£¨M,S2£©·Ö²¼µÄÕıÌ¬¾ØÕó
+        @ Purpose  :ç”Ÿæˆä¸€ä¸ªrs,cså¤§å°çš„ï¼ˆM,S2ï¼‰åˆ†å¸ƒçš„æ­£æ€çŸ©é˜µ
     */
     Matrix RandN_Matrix(const size_t& rs, const size_t& cs, const double& M, const double& S2)
     {
@@ -968,10 +972,10 @@ namespace bzx {
 
 
     /*
-     *  @ Purpose  :¼ÆËã¾ØÕóµÄĞĞÁĞÊ½
+     *  @ Purpose  :è®¡ç®—çŸ©é˜µçš„è¡Œåˆ—å¼
      *  @ Iner_Para:
-     *          i,j ¿ØÖÆ×Ó¾ØÕóÎ»ÖÃ
-     *          sub_i,sub_j ¼ÇÂ¼É¾³ıĞĞÁĞÎ»ÖÃ
+     *          i,j æ§åˆ¶å­çŸ©é˜µä½ç½®
+     *          sub_i,sub_j è®°å½•åˆ é™¤è¡Œåˆ—ä½ç½®
      */
     double DETERMINANT(const Matrix& subMat) {
         size_t _mSize_r, _mSize_c;
@@ -1011,7 +1015,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  : ¼ÆËãÔ­¾ØÕóµÄ°éËæ¾ØÕó
+        @ Purpose  : è®¡ç®—åŸçŸ©é˜µçš„ä¼´éšçŸ©é˜µ
     */
     Matrix ADJOINT_Matrix(const Matrix& Mat) {
         std::size_t _mSize_r, _mSize_c;
@@ -1050,7 +1054,7 @@ namespace bzx {
     }
 
     /*
-       @ Purpose  : ·µ»Ø¾ØÕó×î´óÖµ
+       @ Purpose  : è¿”å›çŸ©é˜µæœ€å¤§å€¼
     */
     double MAX(const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;;
@@ -1075,7 +1079,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :·µ»Ø¾ØÕó×îĞ¡Öµ
+        @ Purpose  :è¿”å›çŸ©é˜µæœ€å°å€¼
     */  
     double MIN(const Matrix& Mat)
     {
@@ -1103,9 +1107,9 @@ namespace bzx {
     /*
          @ Purpose  : A = U*Sigma*VT
          @ Para :
-                     Mat ¼ÆËãµÄÔ­¾ØÕó
-         @ Return : ·µ»ØÔ­¾ØÕó¶ÔÓ¦µÄU£¬Sigma£¬V
-         @ Other : Ôİ²»Ö§³Ö¸´Êı½á¹û
+                     Mat è®¡ç®—çš„åŸçŸ©é˜µ
+         @ Return : è¿”å›åŸçŸ©é˜µå¯¹åº”çš„Uï¼ŒSigmaï¼ŒV
+         @ Other : æš‚ä¸æ”¯æŒå¤æ•°ç»“æœ
          @ Example :
                  Matrix A = {{1,2,3},{4,5,6},{7,8,9}};
                  Matrix U,S,V;
@@ -1130,11 +1134,11 @@ namespace bzx {
     }
 
      /*
-         @ Purpose  : ÑÅ¿Ë±È·¨¼ÆËãÌØÕ÷ÖµÓëÌØÕ÷ÏòÁ¿
+         @ Purpose  : é›…å…‹æ¯”æ³•è®¡ç®—ç‰¹å¾å€¼ä¸ç‰¹å¾å‘é‡
          @ Para :
-                     Mat ¼ÆËãµÄÔ­¾ØÕó
-         @ Return : ·µ»ØÔ­¾ØÕóµÄÌØÕ÷Öµ(²ÎÊı1)ºÍÏàÓ¦µÄÌØÕ÷ÏòÁ¿(²ÎÊı2)¡£
-         @ Other : Ôİ²»Ö§³Ö¸´Êı½á¹û
+                     Mat è®¡ç®—çš„åŸçŸ©é˜µ
+         @ Return : è¿”å›åŸçŸ©é˜µçš„ç‰¹å¾å€¼(å‚æ•°1)å’Œç›¸åº”çš„ç‰¹å¾å‘é‡(å‚æ•°2)ã€‚
+         @ Other : æš‚ä¸æ”¯æŒå¤æ•°ç»“æœ
          @ Example :
                  Matrix A = {{1,2,3},{4,5,6},{7,8,9}};
                  Matrix Rv,R;
@@ -1156,7 +1160,7 @@ namespace bzx {
 
         while (Iter < MAX_ITER)
         {
-            // Ñ°ÕÒ·Ç¶Ô½ÇÏßÔªËØ×î´óÖµ£¬¼°Î»ÖÃ
+            // å¯»æ‰¾éå¯¹è§’çº¿å…ƒç´ æœ€å¤§å€¼ï¼ŒåŠä½ç½®
             double non_dia_max_value_abs = abs(copy_Mat[0][1]);
             size_t non_dia_max_row = 0, non_dia_max_col = 1;
             for (size_t i = 0; i < _mSize_r; ++i) {
@@ -1170,12 +1174,12 @@ namespace bzx {
                 }
             }
 
-            // ¼ì³µÊÇ·ñĞèÒªÍË³öÑ­»·
+            // æ£€è½¦æ˜¯å¦éœ€è¦é€€å‡ºå¾ªç¯
             if (non_dia_max_value_abs < PRECISION) {
                 break;
             }
 
-            // ¼ÆËãĞı×ª¾ØÕó
+            // è®¡ç®—æ—‹è½¬çŸ©é˜µ
             if (copy_Mat[non_dia_max_col][non_dia_max_col] == copy_Mat[non_dia_max_row][non_dia_max_row]) {
                 dbangle = PI / 4;
             }
@@ -1187,7 +1191,7 @@ namespace bzx {
             sintheta = sin(dbangle);
             costheta = cos(dbangle);
 
-            // ¼ÆËãÌØÕ÷ÏòÁ¿ ,givens rotation Matrix
+            // è®¡ç®—ç‰¹å¾å‘é‡ ,givens rotation Matrix
             U[non_dia_max_row][non_dia_max_row] = costheta;
             U[non_dia_max_row][non_dia_max_col] = -sintheta;
             U[non_dia_max_col][non_dia_max_row] = sintheta;
@@ -1205,9 +1209,9 @@ namespace bzx {
             ++Iter;
         }
 
-        // ¼ÆËãÌØÕ÷Öµ
+        // è®¡ç®—ç‰¹å¾å€¼
         EigenValue = &DIAGONAL(copy_Mat);
-        // ÅÅĞò
+        // æ’åº
         double _max_value;
         size_t _max_index;
         double tmp;
@@ -1238,13 +1242,13 @@ namespace bzx {
 
 
     /*
-        @ Purpose  : ÀûÓÃÃİ·¨Çó¾ØÕóÌØÕ÷Öµ
+        @ Purpose  : åˆ©ç”¨å¹‚æ³•æ±‚çŸ©é˜µç‰¹å¾å€¼
         @ Para :
-                    Mat ¼ÆËãµÄÔ­¾ØÕó
-                    min_delta ¿ØÖÆ¼ÆËã¾«¶È
-                    max_iter ¿ØÖÆ¼ÆËãÂÖÊı
-        @ Return : ·µ»ØÔ­¾ØÕóµÄ×î´óÌØÕ÷ÖµºÍÏàÓ¦µÄÌØÕ÷ÏòÁ¿¡£
-        @ Other : Ôİ²»Ö§³Ö¸´Êı½á¹û£¬¾ØÕóÎª·½Õó
+                    Mat è®¡ç®—çš„åŸçŸ©é˜µ
+                    min_delta æ§åˆ¶è®¡ç®—ç²¾åº¦
+                    max_iter æ§åˆ¶è®¡ç®—è½®æ•°
+        @ Return : è¿”å›åŸçŸ©é˜µçš„æœ€å¤§ç‰¹å¾å€¼å’Œç›¸åº”çš„ç‰¹å¾å‘é‡ã€‚
+        @ Other : æš‚ä¸æ”¯æŒå¤æ•°ç»“æœï¼ŒçŸ©é˜µä¸ºæ–¹é˜µ
         @ Example :
                 Matrix A = {{1,2,3},{4,5,6},{7,8,9}};
                 Matrix R;
@@ -1261,9 +1265,9 @@ namespace bzx {
         }
 
 
-        Matrix X = Matrix(_mSize_r, 1, 1);   // ÌØÕ÷ÏòÁ¿
+        Matrix X = Matrix(_mSize_r, 1, 1);   // ç‰¹å¾å‘é‡
         Matrix Y;
-        double m = 0, pre_m = 0;   //ÌØÕ÷Öµ
+        double m = 0, pre_m = 0;   //ç‰¹å¾å€¼
         size_t iter = 0;
         double Delta = INT32_MAX;
         while (iter < max_iter && Delta >min_delta) {
@@ -1278,14 +1282,14 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  : ¼ÆËã¾ØÕóµÄÃİ
-        @ Return : ¼ÆËã½á¹û´æ·ÅÔÚÒ»¸öĞÂµÄ¾ØÕó²¢·µ»Ø
-        @ Other : Ôİ²»Ö§³Ö¸´Êı½á¹û
+        @ Purpose  : è®¡ç®—çŸ©é˜µçš„å¹‚
+        @ Return : è®¡ç®—ç»“æœå­˜æ”¾åœ¨ä¸€ä¸ªæ–°çš„çŸ©é˜µå¹¶è¿”å›
+        @ Other : æš‚ä¸æ”¯æŒå¤æ•°ç»“æœ
         @ Example :
                 Matrix A = {{1,2,3},{4,5,6}};
                 Matrix B;
-                B = SQRT(A);    // ´ËÊ±Îª¿½±´¸³Öµ£¬
-                B = &SQRT(A);   // ´ËÊ±ÎªÖ¸Õë£» ½¨ÒéÊ¹ÓÃ±¾·½·¨
+                B = SQRT(A);    // æ­¤æ—¶ä¸ºæ‹·è´èµ‹å€¼ï¼Œ
+                B = &SQRT(A);   // æ­¤æ—¶ä¸ºæŒ‡é’ˆï¼› å»ºè®®ä½¿ç”¨æœ¬æ–¹æ³•
     */
     Matrix SQRT(const Matrix& Mat) {
         Matrix dst(Mat);
@@ -1308,27 +1312,27 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : µ±Ò»¸ö¾ØÕó±»¶à´ÎÊ¹ÓÃÊ±£¬ÇÒ×¼±¸Í¬²½¸üĞÂÔòĞèÒªÊ¹ÓÃ´Ëº¯Êı
+        @ Purpose : å½“ä¸€ä¸ªçŸ©é˜µè¢«å¤šæ¬¡ä½¿ç”¨æ—¶ï¼Œä¸”å‡†å¤‡åŒæ­¥æ›´æ–°åˆ™éœ€è¦ä½¿ç”¨æ­¤å‡½æ•°
         @ Para :
-                    Mat Ô­¾ØÕó£¬»òÕßÆäËûÒıÓÃ¸Ã¾ØÕóµÄ±äÁ¿
+                    Mat åŸçŸ©é˜µï¼Œæˆ–è€…å…¶ä»–å¼•ç”¨è¯¥çŸ©é˜µçš„å˜é‡
         @ Return :
                     bool
-        @ Other : ´Ëº¯Êı²»Ó¦ÔÚÆäËûº¯ÊıÄÚ²¿½øĞĞÏÔÊ¾µÄµ÷ÓÃ£¬¿ÉÄÜ²úÉúÇ±ÔÚµÄÄÚ´æĞ¹Â©ÍşĞ²
+        @ Other : æ­¤å‡½æ•°ä¸åº”åœ¨å…¶ä»–å‡½æ•°å†…éƒ¨è¿›è¡Œæ˜¾ç¤ºçš„è°ƒç”¨ï¼Œå¯èƒ½äº§ç”Ÿæ½œåœ¨çš„å†…å­˜æ³„æ¼å¨èƒ
         @ Example :
                   Matrix A = {{1,2,3},{4,5,6}};
                   Matrix B;
-                  B = &A;  //´ËÊ±¾ØÕóB°ó¶¨ÁË¾ØÕóA
-                  B = Matrix(3,3); // ´ËÊ±¾ØÕóAÒ²±»Í¬Ê±¸üĞÂ
-                  B.clear();    //ÊÍ·ÅÓë¾ØÕóAµÄ°ó¶¨
-                  B = Matrix(4,4); // ´ËÊ±½ö¸üĞÂB
+                  B = &A;  //æ­¤æ—¶çŸ©é˜µBç»‘å®šäº†çŸ©é˜µA
+                  B = Matrix(3,3); // æ­¤æ—¶çŸ©é˜µAä¹Ÿè¢«åŒæ—¶æ›´æ–°
+                  B.clear();    //é‡Šæ”¾ä¸çŸ©é˜µAçš„ç»‘å®š
+                  B = Matrix(4,4); // æ­¤æ—¶ä»…æ›´æ–°B
     */
     bool Matrix::memAsycEqual(const Matrix& Mat) {
-        // Ö¸ÏòÍ¬Ò»ÄÚ´æµØÖ·
+        // æŒ‡å‘åŒä¸€å†…å­˜åœ°å€
         if (this->Mat == Mat.Mat) {
             return true;
         }
         
-        // ÈôÁ½¸ö¾ØÕó´óĞ¡Ò»ÖÂ£¬ÔòÊ¹ÓÃº¯Êıfast_copy();²»ÖØĞÂ·ÖÅäÄÚ´æ
+        // è‹¥ä¸¤ä¸ªçŸ©é˜µå¤§å°ä¸€è‡´ï¼Œåˆ™ä½¿ç”¨å‡½æ•°fast_copy();ä¸é‡æ–°åˆ†é…å†…å­˜
         if (this->shape() == Mat.shape()) {
             fast_copy(*this, Mat);
             return true;
@@ -1379,7 +1383,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose ¿ìËÙ¿½±´£¬±ØĞëÈ·±£dstµÄ¾ØÕóĞĞÁĞÊı´óÓÚsrc
+        @ Purpose å¿«é€Ÿæ‹·è´ï¼Œå¿…é¡»ç¡®ä¿dstçš„çŸ©é˜µè¡Œåˆ—æ•°å¤§äºsrc
     */
     bool fast_copy(Matrix& dst,const Matrix &src) {
 
@@ -1393,13 +1397,13 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ¼ÆËã¾ØÕóµÄLU·Ö½â
+        @ Purpose : è®¡ç®—çŸ©é˜µçš„LUåˆ†è§£
         @ Para :
-                    Mat ´«ÈëµÄÔ­¾ØÕó
+                    Mat ä¼ å…¥çš„åŸçŸ©é˜µ
         @ Return :
-                    Matrix(2) L¾ØÕó
-                    Matrix(3) U¾ØÕó
-        @ Other : ¾ØÕóĞèÎª·½Õó
+                    Matrix(2) LçŸ©é˜µ
+                    Matrix(3) UçŸ©é˜µ
+        @ Other : çŸ©é˜µéœ€ä¸ºæ–¹é˜µ
         @ Example :
                   Matrix A = {{1,2,3},{4,5,6},{7,8,9}};
                   std::tie(L,U) = LU(A);
@@ -1420,7 +1424,7 @@ namespace bzx {
         size_t j, k;
         double ele;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            //UÖĞ iÁĞÏÂ·½ÔªËØ±äÎª0£»
+            //Uä¸­ iåˆ—ä¸‹æ–¹å…ƒç´ å˜ä¸º0ï¼›
             for ( j = i + 1; j+2 <= _mSize_r; j +=2) {
                 ele = U[j][i] / U[i][i];
                 L[j][i] = ele;
@@ -1444,7 +1448,7 @@ namespace bzx {
     
 
     /*
-        @ Purpose  :½»»»¾ØÕóµÚiĞĞÓëµÚiiĞĞ
+        @ Purpose  :äº¤æ¢çŸ©é˜µç¬¬iè¡Œä¸ç¬¬iiè¡Œ
     */
     void row_swap(Matrix& Mat, size_t i, size_t ii) {
         size_t _mSize_r, _mSize_c;
@@ -1461,7 +1465,7 @@ namespace bzx {
     }
 
     /*
-        @ Purpose  :Îª¼ÆËãLU·Ö½â½øĞĞĞŞ¸ÄµÄĞĞ½»»»º¯Êı
+        @ Purpose  :ä¸ºè®¡ç®—LUåˆ†è§£è¿›è¡Œä¿®æ”¹çš„è¡Œäº¤æ¢å‡½æ•°
     */
     void row_swap_PLU(Matrix& Mat, size_t i, size_t ii,size_t col_index,bool Left) {
         
@@ -1480,13 +1484,13 @@ namespace bzx {
     }
 
     /*
-        @ Purpose : ¼ÆËã¾ØÕóµÄPLU·Ö½â
+        @ Purpose : è®¡ç®—çŸ©é˜µçš„PLUåˆ†è§£
         @ Para :
-                    Mat ´«ÈëµÄÔ­¾ØÕó
+                    Mat ä¼ å…¥çš„åŸçŸ©é˜µ
         @ Return :
-                    Matrix(1) P¾ØÕó
-                    Matrix(2) L¾ØÕó
-                    Matrix(3) U¾ØÕó
+                    Matrix(1) PçŸ©é˜µ
+                    Matrix(2) LçŸ©é˜µ
+                    Matrix(3) UçŸ©é˜µ
         @ Other :
         @ Example :
                   Matrix A = {{1,2,3},{4,5,6}};
@@ -1511,7 +1515,7 @@ namespace bzx {
         double ele;
 
         for (i = 0; i < _mSize_r && current_col <_mSize_c; ++i) {
-            // Ñ°ÕÒ¸ÃÁĞ×î´óÖµ
+            // å¯»æ‰¾è¯¥åˆ—æœ€å¤§å€¼
             max_row_index = i;
 
             for (; current_col < _mSize_c;++current_col) {
@@ -1530,14 +1534,14 @@ namespace bzx {
                 break;
             }
 
-            // ½»»»¸ÃÂÖ´Î×î´óÖµĞĞ
+            // äº¤æ¢è¯¥è½®æ¬¡æœ€å¤§å€¼è¡Œ
             if (max_row_index != i) {
                 std::swap(P2[i], P2[max_row_index]);
                 row_swap_PLU(U, i, max_row_index, current_col, false);
                 row_swap_PLU(L, i, max_row_index, current_col, true);
             }
 
-            //UÖĞ iÁĞÏÂ·½ÔªËØ±äÎª0£»
+            //Uä¸­ iåˆ—ä¸‹æ–¹å…ƒç´ å˜ä¸º0ï¼›
             for (size_t j = i + 1; j < _mSize_r; ++j) {
                 ele = U[j][current_col] / U[i][current_col];
                 L[j][current_col] = ele;
@@ -1570,12 +1574,12 @@ namespace bzx {
 
     /*
         @ Matrix function : rk(A)
-        @ Purpose : ¼ÆËã¾ØÕóµÄÖÈ
+        @ Purpose : è®¡ç®—çŸ©é˜µçš„ç§©
         @ Para :
-                    Mat ´«ÈëµÄÔ­¾ØÕó
+                    Mat ä¼ å…¥çš„åŸçŸ©é˜µ
         @ Return :
-                    size_t ¾ØÕóµÄÖÈ£¬´óÓÚµÈÓÚ0ÇÒĞ¡ÓÚµÈÓÚ¾ØÕóµÄĞĞÊı 
-                    Matrix  Ò»¸öÉÏÈı½Ç¾ØÕó
+                    size_t çŸ©é˜µçš„ç§©ï¼Œå¤§äºç­‰äº0ä¸”å°äºç­‰äºçŸ©é˜µçš„è¡Œæ•° 
+                    Matrix  ä¸€ä¸ªä¸Šä¸‰è§’çŸ©é˜µ
         @ Other : 
         @ Example :
                   Matrix A = {{1,2,3},{4,5,6}};
@@ -1597,7 +1601,7 @@ namespace bzx {
         double ele;
 
         for (i = 0; i < _mSize_r && current_col < _mSize_c; ++i) {
-            // Ñ°ÕÒ¸ÃÁĞ×î´óÖµ
+            // å¯»æ‰¾è¯¥åˆ—æœ€å¤§å€¼
             max_row_index = i;
 
             for (; current_col < _mSize_c; ++current_col) {
@@ -1616,12 +1620,12 @@ namespace bzx {
                 break;
             }
 
-            // ½»»»¸ÃÂÖ´Î×î´óÖµĞĞ
+            // äº¤æ¢è¯¥è½®æ¬¡æœ€å¤§å€¼è¡Œ
             if (max_row_index != i) {
                 row_swap_PLU(U, i, max_row_index, current_col, false);
             }
 
-            //UÖĞ iÁĞÏÂ·½ÔªËØ±äÎª0£»
+            //Uä¸­ iåˆ—ä¸‹æ–¹å…ƒç´ å˜ä¸º0ï¼›
             for (size_t j = i + 1; j < _mSize_r; ++j) {
                 ele = U[j][current_col] / U[i][current_col];
                 m256D = _mm256_set_pd(ele, ele, ele, ele);
@@ -1659,9 +1663,9 @@ namespace bzx {
 
     /*
         @ Matrix function : |Mat|2
-        @ Purpose : ¼ÆËãÔ­¾ØÕóµÄ2·¶Êı
+        @ Purpose : è®¡ç®—åŸçŸ©é˜µçš„2èŒƒæ•°
         @ Para : 
-                Mat ´«ÈëµÄÔ­¾ØÕó
+                Mat ä¼ å…¥çš„åŸçŸ©é˜µ
         @ Return :
         @ Example :
                 Matrix A = {{1,2,3},{4,5,6}};
@@ -1677,12 +1681,12 @@ namespace bzx {
 
     /*
         @ Matrix function : A = QR
-        @ Purpose : Ê¹ÓÃ¸ñÀïÄ·Ê©ÃÜÌØÕı½»·¨¼ÆËãQR·Ö½â
+        @ Purpose : ä½¿ç”¨æ ¼é‡Œå§†æ–½å¯†ç‰¹æ­£äº¤æ³•è®¡ç®—QRåˆ†è§£
         @ Para : 
-                    Mat ´«ÈëµÄÔ­¾ØÕó
+                    Mat ä¼ å…¥çš„åŸçŸ©é˜µ
         @ Return :  
-                    Q,R ·µ»Ø×îÖÕ¼ÆËã½á¹û
-        @ Other : ·µ»Ø¾ØÕó²»Ö§³Ö¸´Êı½á¹û
+                    Q,R è¿”å›æœ€ç»ˆè®¡ç®—ç»“æœ
+        @ Other : è¿”å›çŸ©é˜µä¸æ”¯æŒå¤æ•°ç»“æœ
         @ Example :
                   Matrix A = {{1,2,3},{4,5,6}};
                   Matrix Q,R;
@@ -1696,9 +1700,9 @@ namespace bzx {
 
         Matrix Q(_mSize_r, _mSize_c);
         Matrix R(_mSize_c, _mSize_c);
-        Matrix q(_mSize_r, 1);      // ÁÙÊ±±äÁ¿
-        Matrix y(_mSize_r, 1);      // ÁÙÊ±ÖĞ¼ä±äÁ¿
-        Matrix yT;                  // ÁÙÊ±±äÁ¿
+        Matrix q(_mSize_r, 1);      // ä¸´æ—¶å˜é‡
+        Matrix y(_mSize_r, 1);      // ä¸´æ—¶ä¸­é—´å˜é‡
+        Matrix yT;                  // ä¸´æ—¶å˜é‡
         size_t j, i;
         double norm_2 = 0;
         for (j = 0; j < _mSize_c; ++j) {
@@ -1721,7 +1725,7 @@ namespace bzx {
     }
     
     /*
-        @ Purpose : ½«¾ØÕóÏòÉÏ»òÏòÏÂÈ¡Õû£¬²¢·µ»ØÒ»¸öĞÂµÄ¾ØÕó
+        @ Purpose : å°†çŸ©é˜µå‘ä¸Šæˆ–å‘ä¸‹å–æ•´ï¼Œå¹¶è¿”å›ä¸€ä¸ªæ–°çš„çŸ©é˜µ
     */
     Matrix Ceil(const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;
@@ -1757,9 +1761,9 @@ namespace bzx {
     }
 
     /*
-        @ Purpose :µ±¼ÆËã¶à¸ö¾ØÕó³Ë·¨Ê±£¬ÔËËãË³Ğò¶Ô¼ÆËãËÙ¶ÈÓ°ÏìºÜ´ó£¬´Ëº¯Êı¶Ô¼ÆËãË³Ğò½øĞĞÖØĞÂÅÅÁĞ²¢½øĞĞ¼ÆËã
-        @ Return : ·µ»Ø´«Èë¾ØÕóµÄ³Ë·¨ÔËËã½á¹û
-        @ Other : ¾ØÕó±ØĞëÂú×ã²æ³Ë¹æÔò
+        @ Purpose :å½“è®¡ç®—å¤šä¸ªçŸ©é˜µä¹˜æ³•æ—¶ï¼Œè¿ç®—é¡ºåºå¯¹è®¡ç®—é€Ÿåº¦å½±å“å¾ˆå¤§ï¼Œæ­¤å‡½æ•°å¯¹è®¡ç®—é¡ºåºè¿›è¡Œé‡æ–°æ’åˆ—å¹¶è¿›è¡Œè®¡ç®—
+        @ Return : è¿”å›ä¼ å…¥çŸ©é˜µçš„ä¹˜æ³•è¿ç®—ç»“æœ
+        @ Other : çŸ©é˜µå¿…é¡»æ»¡è¶³å‰ä¹˜è§„åˆ™
         @ Example :
                 Matrix A,B,C,D;
                 A = RandI_Matrix(3, 3, 1, 10);
@@ -1769,19 +1773,38 @@ namespace bzx {
                 Matrix D = MMul({A,B,C,D});
     */
     Matrix MMul(std::initializer_list <Matrix> Mats) {
-        Matrix res;
-
-
-
-        return res;
+        std::vector<Matrix> vec(Mats.begin(),Mats.end());
+        size_t _mSize_r, _mSize_c;
+        size_t max_Size_c = 0;
+        size_t MaxCol_MaxIndex = 0;
+        size_t i = 0;
+        size_t Size = vec.size();
+        while (Size>1)
+        {
+            MaxCol_MaxIndex = 0;
+            std::tie(std::ignore, max_Size_c) = vec[0].shape();
+            for (i = 1; i < Size-1; ++i) {
+                std::tie(std::ignore, _mSize_c) = vec[i].shape();
+                if (max_Size_c < _mSize_c) {
+                    MaxCol_MaxIndex = i;
+                    max_Size_c = _mSize_c;
+                }
+            }
+            vec[MaxCol_MaxIndex] = &(vec[MaxCol_MaxIndex]*vec[MaxCol_MaxIndex + 1]);
+            for (i = MaxCol_MaxIndex+1; i < Size-1; ++i) {
+                vec[i] = &vec[i + 1];
+            }
+            --Size;
+        }
+        return vec[0];
     }
 
 
     /*
-        @ Purpose : »ñÈ¡¾ØÕóMatºÍMat2µÄ±È½Ï½á¹û
-        @ Return : ÈôMat[0,0] == Mat2[0,0]£¬Ôòres[0,0]=1£¬·ñÔòÎª0
-        @          Èô¾ØÕó´óĞ¡²»Ò»ÖÂ£¬Ôò·µ»ØÒ»¸öMatrix()¿Õ¾ØÕó
-        @ Other : ¾ØÕó´óĞ¡±ØĞëÒ»ÖÂ
+        @ Purpose : è·å–çŸ©é˜µMatå’ŒMat2çš„æ¯”è¾ƒç»“æœ
+        @ Return : è‹¥Mat[0,0] == Mat2[0,0]ï¼Œåˆ™res[0,0]=1ï¼Œå¦åˆ™ä¸º0
+        @          è‹¥çŸ©é˜µå¤§å°ä¸ä¸€è‡´ï¼Œåˆ™è¿”å›ä¸€ä¸ªMatrix()ç©ºçŸ©é˜µ
+        @ Other : çŸ©é˜µå¤§å°å¿…é¡»ä¸€è‡´
     */
     Matrix operator==(const Matrix& Mat, const Matrix& Mat2) {
         if (Mat.shape() != Mat2.shape()) {
