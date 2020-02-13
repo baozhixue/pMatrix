@@ -1,0 +1,101 @@
+<script>
+    function getTime(){
+    var Week, Weekday;
+    var date =  new Date();
+    
+    Week = ["星期天", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+    Weekday = date.getDay();
+    
+    year = date.getFullYear();
+    month = date.getMonth() + 1;
+    day = date.getDate();
+    hours = date.getHours();
+    minutes = date.getMinutes();
+    seconds = date.getSeconds();
+    
+    document.getElementById("getTime").innerHTML = year + "年" + month + "月" + day + "日" + "\t" + hours + ":" + minutes + ":" + seconds + "\t" + Week[Weekday];
+
+    };
+</script>
+
+<style>
+    p.main{text-align:center;}
+</style>
+
+<!DOCTYPE HTML>
+<html>
+<body>
+    <style>
+        input[type=number], select {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type=submit] {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        textarea{
+            width: 100%;
+            color:black;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size:larger;
+        }
+
+    </style>
+
+    <div id="getTime" style="float: left;
+            margin-left: 10px;
+            margin-top: 15px;
+            background-color: #aabbcc;">
+        <p>
+            <script>
+                getTime();
+                setInterval("getTime()",1000);
+            </script>
+        </p>
+    </div>
+    <br>
+    <h1> Welcome to baozhixue's first web!</h1>
+    <form action="/matrix" method="post">
+        Matrix:<br>
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
+        <input type="number" name="r" required="required" style="height:50px;width:100px"> <br>
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
+        <input type="number" name="r" required="required" style="height:50px;width:100px"> <br>
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
+        <input type="number" name="r" required="required" style="height:50px;width:100px"> <br>
+
+        <input type="submit" value="Inverse" name="Inverse" style="height:30px;width:70px;"> 
+        <input type="submit" value="LU" name="LU" style="height:30px;width:70px"> <br />
+        <input type="submit" value="PLU" name="PLU" style="height:30px;width:70px">
+        <input type="submit" value="SVD" name="SVD" style="height:30px;width:70px"><br />
+        <input type="submit" value="QR" name="QR" style="height:30px;width:70px">
+        <input type="submit" value="Adjoint" name="Adjoint" style="height:30px;width:70px"> <br />
+        <input type="submit" value="Jacobi" name="Jacobi" style="height:30px;width:70px">
+
+    </form>
+    
+</body>
+</html >
+
+<textarea cols="3" rows="3" style="width:500px;height:500px;border:hidden" readonly ="readonly" >
+
