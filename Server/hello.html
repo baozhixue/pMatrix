@@ -3,7 +3,7 @@
     var Week, Weekday;
     var date =  new Date();
     
-    Week = ["ĞÇÆÚÌì", "ĞÇÆÚÒ»", "ĞÇÆÚ¶ş", "ĞÇÆÚÈı", "ĞÇÆÚËÄ", "ĞÇÆÚÎå", "ĞÇÆÚÁù"];
+    Week = ["æ˜ŸæœŸå¤©", "æ˜ŸæœŸä¸€", "æ˜ŸæœŸäºŒ", "æ˜ŸæœŸä¸‰", "æ˜ŸæœŸå››", "æ˜ŸæœŸäº”", "æ˜ŸæœŸå…­"];
     Weekday = date.getDay();
     
     year = date.getFullYear();
@@ -13,7 +13,7 @@
     minutes = date.getMinutes();
     seconds = date.getSeconds();
     
-    document.getElementById("getTime").innerHTML = year + "Äê" + month + "ÔÂ" + day + "ÈÕ" + "\t" + hours + ":" + minutes + ":" + seconds + "\t" + Week[Weekday];
+    document.getElementById("getTime").innerHTML = year + "å¹´" + month + "æœˆ" + day + "æ—¥" + "\t" + hours + ":" + minutes + ":" + seconds + "\t" + Week[Weekday];
 
     };
 </script>
@@ -86,15 +86,13 @@
         <input type="submit" value="Inverse" name="Inverse" style="height:30px;width:70px;"> 
         <input type="submit" value="LU" name="LU" style="height:30px;width:70px"> <br />
         <input type="submit" value="PLU" name="PLU" style="height:30px;width:70px">
-        <input type="submit" value="SVD" name="SVD" style="height:30px;width:70px"><br />
         <input type="submit" value="QR" name="QR" style="height:30px;width:70px">
         <input type="submit" value="Adjoint" name="Adjoint" style="height:30px;width:70px"> <br />
-        <input type="submit" value="Jacobi" name="Jacobi" style="height:30px;width:70px">
         <!--<br>
     <textarea name="message" rows="30" cols="30" style="height:300px;width:300px">
     </textarea>
     <br><br>
-    <input type="submit" value="Ìá½»" style="height:30px;width:70px">-->
+    <input type="submit" value="æäº¤" style="height:30px;width:70px">-->
 
     </form>
     
