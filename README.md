@@ -1,7 +1,7 @@
 # UMatrix
     .这是进步最大的一次完善和更新，部分函数速度与Matrix版本相比速度提升了几万倍。虽然部分函数在类似10x10矩阵时
         表现可能有点弱势，但是当矩阵变大时UMatrix将击败Matrix版本。下面是他们的速度比较，仅在10x10的矩阵上。
-        ![image](10x10VS.png)
+        ![Image](https://github.com/baozhixue/pMatrix/blob/master/10x10VS.png)
 
 # Matrix [舍弃版本]
     . 这是一个简单的矩阵计算库，目前支持了矩阵的加法，减法，乘法（点乘，叉乘）等。
