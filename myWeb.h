@@ -138,7 +138,7 @@ namespace bzx {
 	}
 
 	/*
-		´¦Àí½ÓÊÕµ½µÄÄÚÈİ
+		å¤„ç†æ¥æ”¶åˆ°çš„å†…å®¹
 	*/
 	std::tuple<ProcessMode, std::string> process(std::string& content)
 	{
@@ -165,7 +165,7 @@ namespace bzx {
 	}
 
 	/*
-		ÈôÎªGET£¬ÔòÊ¹ÓÃ´Ëº¯Êı·¢ËÍÏàÓ¦ÍøÒ³
+		è‹¥ä¸ºGETï¼Œåˆ™ä½¿ç”¨æ­¤å‡½æ•°å‘é€ç›¸åº”ç½‘é¡µ
 	*/
 	bool process_get(std::string& command,SOCKET &sockConn,std::string &root_path) {
 		std::ifstream inFile;
@@ -186,7 +186,7 @@ namespace bzx {
 	}
 
 	/*
-		¸ù¾İPOSTÄÚÈİÑ¡ÔñMatrixº¯Êı´¦ÀíÏàÓ¦Êı¾İ£¬²¢·µ»Ø½á¹û
+		æ ¹æ®POSTå†…å®¹é€‰æ‹©Matrixå‡½æ•°å¤„ç†ç›¸åº”æ•°æ®ï¼Œå¹¶è¿”å›ç»“æœ
 	*/
 	bool process_post(std::string& command, std::string& recv_str, SOCKET& sockConn, std::string& root_path)
 	{
@@ -228,45 +228,36 @@ namespace bzx {
 	}
 
 	/*
-		¸ù¾İº¯Êı·µ»ØÄÚÈİÉú³ÉÏàÓ¦×Ö·û´®
+		æ ¹æ®å‡½æ•°è¿”å›å†…å®¹ç”Ÿæˆç›¸åº”å­—ç¬¦ä¸²
 	*/
 	std::string responseMat_and_Html(std::string& command ,const bzx::Matrix &Mat) {
 		std::string ans = "";
-		if (command == "Inverse") {
-			Matrix	res = bzx::INVERSE(Mat);
-			ans = command +  "\nÔ­¾ØÕó\n" + Mat.to_str()+ "\n"+ res.to_str();
-		}
-		else if (command == "LU") {
+		if (command == "LU") {
 			Matrix L, U;
 			std::tie(L, U) = bzx::LU(Mat);
-			ans = command + "\nÔ­¾ØÕó\n" + Mat.to_str() + "\n" + "\nL:\n" + L.to_str() + "\nU:\n" + U.to_str();
-		}
-		else if (command == "Jacobi") {
-			Matrix EigenValue, EigenVector;
-			std::tie(EigenValue, EigenVector) = bzx::JACOBI(Mat);
-			ans = command + "\nÔ­¾ØÕó\n" + Mat.to_str() + "\n" + "\nEigenValue:\n" + EigenValue.to_str() + "\nEigenVector:\n" + EigenVector.to_str();
+			ans = command + "\nåŸçŸ©é˜µ\n" + Mat.to_str() + "\n" + "\nL:\n" + L.to_str() + "\nU:\n" + U.to_str();
 		}
 		else if (command == "Adjoint")
 		{
 			Matrix A;
 			A = bzx::ADJOINT_Matrix(Mat);
-			ans = command + "\nÔ­¾ØÕó\n" + Mat.to_str() + "\n" +  "\nAdjoint Matrix:\n" + A.to_str();
+			ans = command + "\nåŸçŸ©é˜µ\n" + Mat.to_str() + "\n" +  "\nAdjoint Matrix:\n" + A.to_str();
 		}
 		else if (command == "QR") {
 			Matrix Q, R;
 			std::tie(Q, R) = bzx::JACOBI(Mat);
-			ans = command + "\nÔ­¾ØÕó\n" + Mat.to_str() + "\n" +  "\nQ:\n" + Q.to_str() + "\nR:\n" + R.to_str();
+			ans = command + "\nåŸçŸ©é˜µ\n" + Mat.to_str() + "\n" +  "\nQ:\n" + Q.to_str() + "\nR:\n" + R.to_str();
 		}
 		else if (command == "PLU") {
 			Matrix P,L, U;
 			std::tie(P,L, U) = bzx::PLU(Mat);
-			ans = command + "\nÔ­¾ØÕó\n" + Mat.to_str() + "\n" +"\nP:\n" + P.to_str()+ "\nL:\n" + L.to_str() + "\nU:\n" + U.to_str();
+			ans = command + "\nåŸçŸ©é˜µ\n" + Mat.to_str() + "\n" +"\nP:\n" + P.to_str()+ "\nL:\n" + L.to_str() + "\nU:\n" + U.to_str();
 		}
 		else if (command == "SVD") {
 			Matrix U,S,V;
 			std::tie(U, S, V) = bzx::SVD(Mat);
 
-			ans = command + "\nÔ­¾ØÕó\n" + Mat.to_str() + "\n" + "\nU: \n" + U.to_str() + "S: \n" + S.to_str() + "V: \n" + V.to_str();
+			ans = command + "\nåŸçŸ©é˜µ\n" + Mat.to_str() + "\n" + "\nU: \n" + U.to_str() + "S: \n" + S.to_str() + "V: \n" + V.to_str();
 		}
 		return ans;
 	}
