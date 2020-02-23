@@ -1,8 +1,17 @@
 # UMatrix
-    .这是进步最大的一次完善和更新，部分函数速度与Matrix版本相比速度提升了几万倍。虽然部分函数在类似10x10矩阵时
+    . 这是进步最大的一次完善和更新，部分函数速度与Matrix版本相比速度提升了几万倍。虽然部分函数在类似10x10矩阵时
         表现可能有点弱势，但是当矩阵变大时UMatrix将击败Matrix版本。下面是他们的速度比较，仅在10x10的矩阵上。
-        ![Image](https://github.com/baozhixue/pMatrix/blob/master/10x10VS.png)
-
+   ![Image](https://github.com/baozhixue/pMatrix/blob/master/10x10VS.png)
+    . 下面是UMatrix版本在10x10至1000x1000矩阵的函数速度的展示。在本次更新中，QR()函数提升最高，在1000x1000矩阵
+        下计算速度提示将近18倍。
+   ![Image](https://github.com/baozhixue/pMatrix/blob/master/mat.png.jpg)
+    . 在此次更新中，删除了SVD(...)和Jacobi(...)函数，因为我发现这两个函数的计算结果有一些问题。
+    . UMatrix可以在windows和ubuntu下使用，因为在ubuntu下第一个版本因为使用AVX指令集总是报错所以此版本删除了所有
+        AVX指令集的内容。
+    . 针对删除AVX指令集在UMatrix内替换使用了omp头文件。所以在ubuntu下编译时建议使用
+            $：g++ ***.cpp UMatrix.h -fopenmp -O2
+    
+    
 # Matrix [舍弃版本]
     . 这是一个简单的矩阵计算库，目前支持了矩阵的加法，减法，乘法（点乘，叉乘）等。
     . SVD(以雅克比迭代法计算，目前仅支持方阵，并且对复数不支持）。
