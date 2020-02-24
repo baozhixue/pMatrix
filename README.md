@@ -12,6 +12,7 @@
         AVX指令集的内容。
     . 针对删除AVX指令集在UMatrix内替换使用了omp头文件。所以在ubuntu下编译时建议使用
             $：g++ ***.cpp UMatrix.h -fopenmp -O2
+    . 速度虽然与python或Matlab矩阵计算速度依旧相差很大，但是。。。。。。。。。。。。。
     
     
 # Matrix [舍弃版本]
