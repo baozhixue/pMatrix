@@ -1,7 +1,9 @@
 # UMatrix
-    . 这是进步最大的一次完善和更新，部分函数速度与Matrix版本相比速度提升了几万倍。虽然部分函数在类似10x10矩阵时
-        表现可能有点弱势，但是当矩阵变大时UMatrix将击败Matrix版本。下面是他们的速度比较．
+    . 这是进步最大的一次完善和更新，部分函数速度与Matrix版本相比速度提升很大。下方为在10x10至1000x1000时的部分函
+        数比较．其中Inverse,AdjointMatrix(...)等其余几个函数未在此处列出，原因是他们的速度可能需要等到我的电脑
+        报废才会出结果．
    ![Image](https://github.com/baozhixue/pMatrix/blob/master/speedVS.png)
+    
     . 下面是UMatrix版本在10x10至1000x1000矩阵的函数速度的展示。在本次更新中，QR()函数提升最高，在1000x1000矩阵
         下计算速度提示将近18倍。
    ![Image](https://github.com/baozhixue/pMatrix/blob/master/mat.png.jpg)
