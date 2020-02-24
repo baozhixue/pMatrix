@@ -7,8 +7,6 @@
 #define LALIB_MATRIX_H
 
 #include <iostream>
-#include <immintrin.h>
-#include <iostream>
 #include <memory>
 #include <random>
 #include <ctime>
@@ -16,6 +14,7 @@
 #include <string>
 #include <list>
 #include <cmath>
+
 namespace bzx {
 
     constexpr double PI = 3.1415926;
@@ -77,8 +76,6 @@ namespace bzx {
     double DETERMINANT(const Matrix& Mat);
     std::tuple<size_t, Matrix> Rank(const Matrix& Mat);   // ?????????????????????????
     Matrix TRANSPOSITION(const Matrix& Mat);
-    std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat);      // ????????????????????
-    std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat);           // ????????????????????
     std::tuple<double, Matrix> Power_Method(const Matrix& Mat, const double& min_delta = MIN_DELTA, const size_t& max_iter= MAX_ITER);
     std::tuple<Matrix, Matrix> QR(const Matrix& Mat);
     double Norm_2(const Matrix& Mat);
@@ -119,8 +116,8 @@ namespace bzx {
         bool part_set(const Matrix& Mat, const size_t _Low_r, const size_t& _High_r, const size_t& _Low_c, const size_t& _High_c);
         Matrix& TRANS();
         std::tuple<size_t, size_t> shape() const;
-        void CEIL() { *this = &Ceil(*this); };
-        void FLOOR() { *this = &Floor(*this); };
+        void CEIL() { *this = Ceil(*this); };
+        void FLOOR() { *this = Floor(*this); };
 
         ~Matrix();
     private:
@@ -188,13 +185,13 @@ namespace bzx {
     }
 
     void Matrix::operator+=(const Matrix& Mat) {
-        *this = &(*this + Mat);
+        *this = (*this + Mat);
     }
     void Matrix::operator-=(const Matrix& Mat) {
-        *this = &(*this - Mat);
+        *this = (*this - Mat);
     }
     void Matrix::operator*=(const Matrix& Mat) {
-        *this = &(*this * Mat);
+        *this = (*this * Mat);
     }
 
     /*
@@ -233,9 +230,7 @@ namespace bzx {
                     throw "failed to alloc new memory!\n";
                 }
 
-                for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                    _mm256_store_pd(tmp + j, _mm256_load_pd(Mat[i] + j));
-                }
+                j = 0;
                 while (j < _mSize_c) {
                     *(tmp + j) = Mat[i][j];
                     ++j;
@@ -289,22 +284,14 @@ namespace bzx {
         Matrix dst(_mSize_r, _m2Size_c, 0);
         // version 0.2
         size_t k = 0;
-        __m256d dst_m256d = _mm256_setzero_pd(); // _mm256_set_pd(0, 0, 0, 0);
-        __m256d Mat2_m256d;
         double dst_array[4];
         for (size_t i = 0; i < _mSize_r; ++i) {
             for (size_t j = 0; j < _m2Size_c; ++j) {
-                for (k = 0; k + 4 <= _m2Size_r; k += 4) {
-                    Mat2_m256d = _mm256_set_pd(Mat2[k + 3][j], Mat2[k + 2][j], Mat2[k + 1][j], Mat2[k][j]);
-                    dst_m256d = _mm256_add_pd(dst_m256d, _mm256_mul_pd(_mm256_load_pd(Mat[i] + k), Mat2_m256d));
-                }
-                _mm256_store_pd(dst_array, dst_m256d);
-                dst[i][j] = dst_array[0] + dst_array[1] + dst_array[2] + dst_array[3];
+                k = 0;
                 while (k < _mSize_c) {
                     dst[i][j] += (Mat[i][k] * Mat2[k][j]);
                     ++k;
                 }
-                dst_m256d = _mm256_setzero_pd(); // _mm256_set_pd(0, 0, 0, 0);
             }
         }
 
@@ -333,9 +320,7 @@ namespace bzx {
         size_t i = 0, j = 0;
         if (_m2Size_c == _mSize_c) {
             for (i = 0; i < _mSize_r; ++i) {
-                for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                    _mm256_store_pd(dst[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));
-                }
+                j = 0;
                 while (j < _mSize_c) {
                     dst[i][j] = Mat[i][j] * Mat2[i][j];
                     ++j;
@@ -348,10 +333,7 @@ namespace bzx {
                 return Matrix();
             }
             for (i = 0; i < _mSize_r; ++i) {
-                __m256d m256d = _mm256_set_pd(Mat2[i][0], Mat2[i][0], Mat2[i][0], Mat2[i][0]);
-                for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                    _mm256_store_pd(dst[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat[i] + j), m256d));
-                }
+                j = 0;
                 while (j < _mSize_c) {
                     dst[i][j] = Mat[i][j] * Mat2[i][0];
                     ++j;
@@ -371,11 +353,8 @@ namespace bzx {
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
         Matrix dst(_mSize_r, _mSize_c);
         size_t i = 0, j = 0;
-        __m256d m256 = _mm256_set_pd(num, num, num, num);
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst[i] + j, _mm256_mul_pd(_mm256_load_pd(Mat[i] + j), m256));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 dst[i][j] = Mat[i][j] * num;
                 ++j;
@@ -398,11 +377,8 @@ namespace bzx {
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
         Matrix dst(_mSize_r, _mSize_c);
         size_t i = 0, j = 0;
-        __m256d m256 = _mm256_set_pd(num, num, num, num);
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst[i] + j, _mm256_div_pd(_mm256_load_pd(Mat[i] + j), m256));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 dst[i][j] = Mat[i][j] / num;
                 ++j;
@@ -425,9 +401,7 @@ namespace bzx {
         Matrix dst(_mSize_r, _mSize_c);
         size_t i = 0, j = 0;
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst[i] + j, _mm256_add_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 dst[i][j] = Mat[i][j] + Mat2[i][j];
                 ++j;
@@ -450,9 +424,7 @@ namespace bzx {
         Matrix dst(_mSize_r, _mSize_c);
         size_t i = 0, j = 0;
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(dst[i] + j, _mm256_sub_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 dst[i][j] = Mat[i][j] - Mat2[i][j];
                 ++j;
@@ -477,15 +449,12 @@ namespace bzx {
         }
         this->Mat = tmp2;
 
-        __m256d m256 = _mm256_set_pd(init_num, init_num, init_num, init_num);
         for (i = 0; i < _row_size; ++i) {
             tmp = new double[_col_size];
             if (tmp == NULL) {
                 throw "failed to alloc new memory!\n";
             }
-            for (j = 0; j + 4 <= _col_size; j += 4) {
-                _mm256_store_pd(tmp + j, m256);
-            }
+            j = 0;
             while (j < _col_size) {
                 *(tmp + j) = init_num;
                 ++j;
@@ -564,10 +533,7 @@ namespace bzx {
             if (tmp == NULL) {
                 throw "failed to alloc new memory!\n";
             }
-
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat[i] + j));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 *(tmp + j) = Mat[i][j];
                 ++j;
@@ -752,7 +718,7 @@ namespace bzx {
      * @ Purpose  :转置矩阵自身
      */
     Matrix& Matrix::TRANS() {
-        *this = &TRANSPOSITION(*this);
+        *this = TRANSPOSITION(*this);
         return *this;
     }
 
@@ -762,12 +728,7 @@ namespace bzx {
         Matrix res(_mSize_c, _mSize_r);
         size_t j = 0;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                res[j][i] = Mat[i][j];
-                res[j + 1][i] = Mat[i][j + 1];
-                res[j + 2][i] = Mat[i][j + 2];
-                res[j + 3][i] = Mat[i][j + 3];
-            }
+            j = 0;
             while (j < _mSize_c) {
                 res[j][i] = Mat[i][j];
                 ++j;
@@ -912,12 +873,8 @@ namespace bzx {
         std::random_device rd;
         std::uniform_int_distribution<int> dist(low, high);
 
-        __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
-            for (j = 0; j + 4 <= cs; j += 4) {
-                m256 = _mm256_set_pd(dist(rd), dist(rd), dist(rd), dist(rd));
-                _mm256_store_pd(res[i] + j, m256);
-            }
+            j = 0;
             while (j < cs) {
                 res[i][j] = res[i][j] = dist(rd), dist(rd), dist(rd), dist(rd);
                 ++j;
@@ -935,12 +892,8 @@ namespace bzx {
         std::uniform_real_distribution<double> dist(low,high);
         size_t j = 0;
         Matrix res(rs, cs);
-        __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
-            for (j = 0; j+4 <= cs; j+=4) {
-                m256 = _mm256_set_pd(dist(rd), dist(rd), dist(rd), dist(rd));
-                _mm256_store_pd(res[i] + j, m256);
-            }
+            j = 0;
             while (j < cs) {
                 res[i][j] = dist(rd);
                 ++j;
@@ -959,12 +912,8 @@ namespace bzx {
         std::normal_distribution<double> dist(M,S2);
         size_t j = 0;
         Matrix res(rs, cs);
-        __m256d m256;
         for (size_t i = 0; i < rs; ++i) {
-            for (j = 0; j + 4 <= cs; j += 4) {
-                m256 = _mm256_set_pd(dist(rd), dist(rd), dist(rd), dist(rd));
-                _mm256_store_pd(res[i] + j, m256);
-            }
+            j = 0;
             while (j < cs) {
                 res[i][j] = dist(rd);
                 ++j;
@@ -1063,39 +1012,17 @@ namespace bzx {
     double MAX(const Matrix& Mat) {
         size_t _mSize_r, _mSize_c;;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        double tmp[4] = { DMIN,DMIN,DMIN,DMIN };
-        __m256d max_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
         double res = DMIN;
         size_t j = 0;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                max_256 = _mm256_max_pd(_mm256_load_pd(Mat[i] + j), max_256);
-            }
-            _mm256_store_pd(tmp, max_256);
-            res = std::max(res, std::max(std::max(tmp[0], tmp[1]), std::max(tmp[2], tmp[3])));
             while (j < _mSize_c) {
                 res = std::max(res, Mat[i][j]);
                 ++j;
             }
-            max_256 = _mm256_set_pd(DMIN, DMIN, DMIN, DMIN);
         }
         return res;
     }
-    double MAX2(const Matrix& Mat) {
-        size_t _mSize_r, _mSize_c;;
-        std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        double tmp = Mat[0][0];
-        double res = DMIN;
-        size_t j = 0;
-        for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j < _mSize_c; ++j) {
-                if (tmp > res) {
-                    res = tmp;
-                }
-            }
-        }
-        return res;
-    }
+
     /*
         @ Purpose  :返回矩阵最小值
     */  
@@ -1103,158 +1030,15 @@ namespace bzx {
     {
         size_t _mSize_r, _mSize_c;;
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        double tmp[4] = { DMAX,DMAX,DMAX,DMAX };
-        __m256d max_256 = _mm256_set_pd(DMAX, DMAX, DMAX, DMAX);
-        double res = DMAX;
+        double res = Mat[0][0];
         size_t j = 0;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                max_256 = _mm256_min_pd(_mm256_load_pd(Mat[i] + j), max_256);
-            }
-            _mm256_store_pd(tmp, max_256);
-            res = std::min(res, std::min(std::min(tmp[0], tmp[1]), std::min(tmp[2], tmp[3])));
             while (j < _mSize_c) {
                 res = std::min(res, Mat[i][j]);
                 ++j;
             }
-            max_256 = _mm256_set_pd(DMAX, DMAX, DMAX, DMAX);
         }
         return res;
-    }
-
-    /*
-         @ Purpose  : A = U*Sigma*VT
-         @ Para :
-                     Mat 计算的原矩阵
-         @ Return : 返回原矩阵对应的U，Sigma，V
-         @ Other : 暂不支持复数结果
-         @ Example :
-                 Matrix A = {{1,2,3},{4,5,6},{7,8,9}};
-                 Matrix U,S,V;
-                 std::tie(U,S,V) = SVD(Mat);
-     */
-    std::tuple<Matrix, Matrix, Matrix> SVD(const Matrix& Mat) {
-
-        Matrix ATA, AAT, tmp, U, Sigma, V;
-        tmp = &TRANSPOSITION(Mat);
-        ATA = &(tmp * Mat);
-        AAT = &(Mat * tmp);
-        std::tie(std::ignore, V) = JACOBI(ATA);
-        std::tie(Sigma, U) = JACOBI(AAT);
-
-        size_t _mSize_r, _mSize_c;;
-        std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        Sigma.TRANS();
-        Sigma = &DIAGONAL(_mSize_r, _mSize_c, Sigma);
-        Sigma = &SQRT(Sigma);
-
-        return std::make_tuple(U, Sigma, V);
-    }
-
-     /*
-         @ Purpose  : 雅克比法计算特征值与特征向量
-         @ Para :
-                     Mat 计算的原矩阵
-         @ Return : 返回原矩阵的特征值(参数1)和相应的特征向量(参数2)。
-         @ Other : 暂不支持复数结果
-         @ Example :
-                 Matrix A = {{1,2,3},{4,5,6},{7,8,9}};
-                 Matrix Rv,R;
-                 std::tie(Rv,R) = JACOBI(Mat);
-     */
-    std::tuple<Matrix, Matrix> JACOBI(const Matrix& Mat) {
-        std::size_t _mSize_r, _mSize_c;
-        std::tie(_mSize_r, _mSize_c) = Mat.shape();
-
-        Matrix EigenVector;
-        EigenVector = &EYE(_mSize_r, _mSize_c);
-        Matrix U;
-        U = &EYE(_mSize_r, _mSize_c);
-        Matrix UT; // U's trans
-        Matrix EigenValue(_mSize_r, 1);
-        Matrix copy_Mat = Mat; 
-        size_t Iter = 0;
-        double dbangle, sintheta, costheta;
-
-        while (Iter < MAX_ITER)
-        {
-            // 寻找非对角线元素最大值，及位置
-            double non_dia_max_value_abs = abs(copy_Mat[0][1]);
-            size_t non_dia_max_row = 0, non_dia_max_col = 1;
-            for (size_t i = 0; i < _mSize_r; ++i) {
-                for (size_t j = 0; j < _mSize_c; ++j) {
-                    if (i != j && abs(copy_Mat[i][j]) > non_dia_max_value_abs)
-                    {
-                        non_dia_max_row = i;
-                        non_dia_max_col = j;
-                        non_dia_max_value_abs = abs(copy_Mat[i][j]);
-                    }
-                }
-            }
-
-            // 检车是否需要退出循环
-            if (non_dia_max_value_abs < PRECISION) {
-                break;
-            }
-
-            // 计算旋转矩阵
-            if (copy_Mat[non_dia_max_col][non_dia_max_col] == copy_Mat[non_dia_max_row][non_dia_max_row]) {
-                dbangle = PI / 4;
-            }
-            else {
-                dbangle = 0.5 * atan2(2 * copy_Mat[non_dia_max_row][non_dia_max_col],
-                    copy_Mat[non_dia_max_col][non_dia_max_col] - copy_Mat[non_dia_max_row][non_dia_max_row]);
-            }
-
-            sintheta = sin(dbangle);
-            costheta = cos(dbangle);
-
-            // 计算特征向量 ,givens rotation Matrix
-            U[non_dia_max_row][non_dia_max_row] = costheta;
-            U[non_dia_max_row][non_dia_max_col] = -sintheta;
-            U[non_dia_max_col][non_dia_max_row] = sintheta;
-            U[non_dia_max_col][non_dia_max_col] = costheta;
-            UT = &TRANSPOSITION(U);
-            copy_Mat = (U * copy_Mat * UT);
-
-            EigenVector = (EigenVector * UT);
-            U[non_dia_max_row][non_dia_max_row] = 1;
-            U[non_dia_max_row][non_dia_max_col] = 0;
-            U[non_dia_max_col][non_dia_max_row] = 0;
-            U[non_dia_max_col][non_dia_max_col] = 1;
-
-            ++Iter;
-        }
-
-        // 计算特征值
-        EigenValue = &DIAGONAL(copy_Mat);
-        // 排序
-        double _max_value;
-        size_t _max_index;
-        double tmp;
-        std::tie(_mSize_r, _mSize_c) = EigenValue.shape();
-        for (size_t i = 0; i < _mSize_r; ++i) {
-            _max_index = i;
-            _max_value = EigenValue[i][0];
-            for (size_t j = i + 1; j < _mSize_r; ++j) {
-                if (_max_value < EigenValue[j][0]) {
-                    _max_index = j;
-                    _max_value = EigenValue[j][0];
-                }
-                if (abs(EigenVector[i][j]) < PRECISION) {
-                    EigenVector[i][j] = 0;
-                }
-            }
-            if (abs(EigenValue[i][0]) < PRECISION) {
-                EigenValue[i][0] = 0;
-            }
-            tmp = EigenValue[i][0];
-            std::swap(EigenValue[i][0], EigenValue[_max_index][0]);
-            for (size_t k = 0; _max_index != i && k < _mSize_r; ++k) {
-                std::swap(EigenVector[k][i], EigenVector[k][_max_index]);
-            }
-        }
-        return std::make_tuple(EigenValue, EigenVector);
     }
 
     /*
@@ -1287,11 +1071,11 @@ namespace bzx {
         size_t iter = 0;
         double Delta = INT32_MAX;
         while (iter < max_iter && Delta >min_delta) {
-            Y = &(Mat * X);
+            Y = (Mat * X);
             m = MAX(Y);
             Delta = abs(m - pre_m);
             pre_m = m;
-            X = &(Y / m);
+            X = (Y / m);
             iter += 1;
         }
         return std::make_tuple(m, X);
@@ -1314,11 +1098,7 @@ namespace bzx {
 
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4)
-            {
-                _mm256_store_pd(dst[i] + j,
-                    _mm256_sqrt_pd(_mm256_load_pd(Mat[i] + j)));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 dst[i][j] = std::sqrt(Mat[i][j]);
                 ++j;
@@ -1374,10 +1154,7 @@ namespace bzx {
             if (tmp == NULL) {
                 throw "failed to alloc new memory!\n";
             }
-
-            for (j = 0; j + 4 <= new_Size_c; j += 4) {
-                _mm256_store_pd(tmp + j, _mm256_load_pd(Mat[i] + j));
-            }
+            j = 0;
             while (j < new_Size_c) {
                 *(tmp + j) = Mat[i][j];
                 ++j;
@@ -1436,7 +1213,6 @@ namespace bzx {
 
         Matrix L = EYE(_mSize_r);
         Matrix U(Mat);
-        __m256d m256D;
         size_t j, k;
         double ele;
         for (size_t i = 0; i < _mSize_r; ++i) {
@@ -1444,14 +1220,7 @@ namespace bzx {
             for ( j = i + 1; j+2 <= _mSize_r; j +=2) {
                 ele = U[j][i] / U[i][i];
                 L[j][i] = ele;
-                m256D = _mm256_set_pd(ele, ele, ele, ele);
-                
-                for (k = 0; k + 4 <= _mSize_c; k += 4) {
-                    _mm256_store_pd(U[j] + k, _mm256_sub_pd(
-                        _mm256_load_pd(U[j] + k), 
-                        _mm256_mul_pd(_mm256_load_pd(U[i] + k),m256D)
-                    ));
-                }
+                k = 0;
                 while (k < _mSize_c) {
                     U[j][k] -= (U[i][k] * ele);
                     ++k;
@@ -1527,7 +1296,6 @@ namespace bzx {
         size_t max_row_index;
         size_t current_col = 0;
         size_t i = 0;
-        __m256d m256D;
         double ele;
 
         for (i = 0; i < _mSize_r && current_col <_mSize_c; ++i) {
@@ -1561,15 +1329,7 @@ namespace bzx {
             for (size_t j = i + 1; j < _mSize_r; ++j) {
                 ele = U[j][current_col] / U[i][current_col];
                 L[j][current_col] = ele;
-                m256D = _mm256_set_pd(ele, ele, ele, ele);
                 size_t k = 0;
-                for (k = current_col; k+4 <= _mSize_c; k+=4) {
-                   // U[j][k] = U[j][k] - U[i][k] * ele;
-                    _mm256_store_pd(U[j] + k, _mm256_sub_pd(
-                        _mm256_load_pd(U[j] + k), 
-                        _mm256_mul_pd(_mm256_load_pd(U[i] + k),m256D)
-                    ));
-                }
                 while (k < _mSize_c) {
                     U[j][k] -= (U[i][k] * ele);
                     ++k;
@@ -1613,7 +1373,6 @@ namespace bzx {
         size_t max_row_index;
         size_t current_col = 0;
         size_t i = 0;
-        __m256d m256D;
         double ele;
 
         for (i = 0; i < _mSize_r && current_col < _mSize_c; ++i) {
@@ -1644,14 +1403,7 @@ namespace bzx {
             //U中 i列下方元素变为0；
             for (size_t j = i + 1; j < _mSize_r; ++j) {
                 ele = U[j][current_col] / U[i][current_col];
-                m256D = _mm256_set_pd(ele, ele, ele, ele);
                 size_t k = 0;
-                for (k = current_col; k + 4 <= _mSize_c; k += 4) {
-                    _mm256_store_pd(U[j] + k, _mm256_sub_pd(
-                        _mm256_load_pd(U[j] + k),
-                        _mm256_mul_pd(_mm256_load_pd(U[i] + k), m256D)
-                    ));
-                }
                 while (k < _mSize_c) {
                     U[j][k] -= (U[i][k] * ele);
                     ++k;
@@ -1723,18 +1475,18 @@ namespace bzx {
         double norm_2 = 0;
         for (j = 0; j < _mSize_c; ++j) {
             // y = A[][j]
-            y = &Mat(-1, j);
+            y = Mat(-1, j);
             // q(i)
             
             for (i = 0; j>0 && i < j; ++i) {
-                q = &Q(-1, i);
-                yT = &(TRANSPOSITION(q) * y);
+                q = Q(-1, i);
+                yT = (TRANSPOSITION(q) * y);
                 R[i][j] = yT[0][0];
-                y = &(y - DOT(q, R[i][j])); //y -= (q * R[i][j]);
+                y = (y - DOT(q, R[i][j])); //y -= (q * R[i][j]);
             }
             norm_2 = Norm_2(y);
             R[j][j] = norm_2;
-            q = &(y / norm_2);
+            q = (y / norm_2);
             Q.part_set(q, 0, -1, j, j + 1);
         }
         return std::make_tuple(Q, R);
@@ -1749,9 +1501,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t i, j;
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j, _mm256_ceil_pd(_mm256_load_pd(Mat[i] + j)));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 res[i][j] = std::ceil(Mat[i][j]);
                 ++j;
@@ -1765,9 +1515,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t i, j;
         for (i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j, _mm256_floor_pd(_mm256_load_pd(Mat[i] + j)));
-            }
+            j = 0;
             while (j < _mSize_c) {
                 res[i][j] = std::floor(Mat[i][j]);
                 ++j;
@@ -1806,7 +1554,7 @@ namespace bzx {
                     max_Size_c = _mSize_c;
                 }
             }
-            vec[MaxCol_MaxIndex] = &(vec[MaxCol_MaxIndex]*vec[MaxCol_MaxIndex + 1]);
+            vec[MaxCol_MaxIndex] = (vec[MaxCol_MaxIndex]*vec[MaxCol_MaxIndex + 1]);
             for (i = MaxCol_MaxIndex+1; i < Size-1; ++i) {
                 vec[i] = &vec[i + 1];
             }
@@ -1834,14 +1582,6 @@ namespace bzx {
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
             j = 0;
-            /*for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_cmp_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j), _CMP_EQ_UQ));
-                res[i][j] = (res[i][j] &&0x1);
-                res[i][j+1] = (res[i][j+1]&&0x1);
-                res[i][j+2] = (res[i][j+2] &&0x1);
-                res[i][j+3] = (res[i][j+3] &&0x1);
-            }*/
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] == Mat2[i][j]);
@@ -1861,14 +1601,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_cmp_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j), _CMP_NEQ_UQ));
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] != Mat2[i][j]);
@@ -1888,14 +1621,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_cmp_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j), _CMP_GT_OQ));
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] > Mat2[i][j]);
@@ -1915,14 +1641,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_cmp_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j), _CMP_LT_OS));
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] < Mat2[i][j]);
@@ -1942,14 +1661,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_cmp_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j), _CMP_NLT_UQ));
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] >= Mat2[i][j]);
@@ -1969,14 +1681,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_cmp_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j), _CMP_LE_OQ));    //
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] <= Mat2[i][j]);
@@ -1996,14 +1701,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_or_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));    //
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] || Mat2[i][j]);
@@ -2023,14 +1721,7 @@ namespace bzx {
         Matrix res(_mSize_r, _mSize_c);
         size_t j;
         for (size_t i = 0; i < _mSize_r; ++i) {
-            for (j = 0; j + 4 <= _mSize_c; j += 4) {
-                _mm256_store_pd(res[i] + j,
-                    _mm256_and_pd(_mm256_load_pd(Mat[i] + j), _mm256_load_pd(Mat2[i] + j)));    //
-                res[i][j] = (res[i][j] && 0x1);
-                res[i][j + 1] = (res[i][j + 1] && 0x1);
-                res[i][j + 2] = (res[i][j + 2] && 0x1);
-                res[i][j + 3] = (res[i][j + 3] && 0x1);
-            }
+            j = 0;
             while (j < _mSize_c)
             {
                 res[i][j] = (Mat[i][j] && Mat2[i][j]);
@@ -2039,7 +1730,7 @@ namespace bzx {
         }
         return res;
     }
-   
+
 }
 
 #endif //LALIB_MATRIX_H
