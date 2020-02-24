@@ -1,10 +1,10 @@
 # UMatrix
     . 这是进步最大的一次完善和更新，部分函数速度与Matrix版本相比速度提升了几万倍。虽然部分函数在类似10x10矩阵时
         表现可能有点弱势，但是当矩阵变大时UMatrix将击败Matrix版本。下面是他们的速度比较．
-    
+![Image](https://github.com/baozhixue/pMatrix/blob/master/speedVS.png)
     . 下面是UMatrix版本在10x10至1000x1000矩阵的函数速度的展示。在本次更新中，QR()函数提升最高，在1000x1000矩阵
         下计算速度提示将近18倍。
-   ![Image](https://github.com/baozhixue/pMatrix/blob/master/mat.png.jpg)
+![Image](https://github.com/baozhixue/pMatrix/blob/master/mat.png.jpg)
     
     . 在此次更新中，删除了SVD(...)和Jacobi(...)函数，因为我发现这两个函数的计算结果有一些问题。
     . UMatrix可以在windows和ubuntu下使用，因为在ubuntu下第一个版本因为使用AVX指令集总是报错所以此版本删除了所有
