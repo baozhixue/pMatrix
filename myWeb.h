@@ -1,6 +1,9 @@
+#ifndef MYWEB_H
+#define MYWEB_H
+
 #include <tuple>
 #include <regex>
-
+#include <fstream>
 
 #include<sys/socket.h>
 #include<netinet/in.h>
@@ -21,7 +24,7 @@ namespace ubzx {
         std::tuple<ProcessMode, std::string> process(std::string& content);
         bool process_get(std::string& command, int& sockConn, std::string& root_path);
         bool process_post(std::string& command, std::string &recv_str, int& sockConn, std::string& root_path);
-        std::string responseMat_and_Html(std::string& command, const uubzx::Matrix& Mat);
+        std::string responseMat_and_Html(std::string& command, const ubzx::Matrix& Mat);
 
         // ubuntu
         bool run_server() {
