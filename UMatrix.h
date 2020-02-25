@@ -578,23 +578,7 @@ namespace ubzx {
      * @ Purpose : ±ê×¼Êä³ö
      */
     std::ostream& operator<<(std::ostream& out, const Matrix& Mat) {
-        size_t _mSize_r, _mSize_c;
-        std::tie(_mSize_r, _mSize_c) = Mat.shape();
-        if (_mSize_c == 0 || _mSize_r == 0) {
-            return out;
-        }
-
-        out << "[";
-        for (size_t i = 0; i < _mSize_r; ++i) {
-            out << " ";
-            for (size_t j = 0; j < _mSize_c; ++j) {
-                out << Mat[i][j] << " ";
-            }
-            if (i + 1 == _mSize_r) {
-                out << "] , (" << _mSize_r << ", " << _mSize_c << ")";
-            }
-            out << "\n";
-        }
+        out<< Mat.to_str();
         return out;
     }
 
@@ -674,7 +658,7 @@ namespace ubzx {
 
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = this->shape();
-        std::string ZERO = "    0    ";
+        std::string ZERO = "      0     ";
         std::string tmp;
         res += "[";
         for (size_t i = 0; i < _mSize_r; ++i) {
