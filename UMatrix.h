@@ -148,6 +148,9 @@ namespace ubzx {
 
     bool Matrix::Resize(const size_t &nrs,const size_t &ncs){
         size_t olR,olC;
+        if(this->shape() == std::make_tuple(nrs,ncs)){
+            return true;
+        }
         std::tie(olR,olC) = this->shape();
         size_t copy_length = std::min(ncs,olC);
         double **tmp2 = new double*[nrs];
@@ -360,6 +363,7 @@ namespace ubzx {
         Matrix dst(Mat);
         size_t i = 0, j = 0;
         if (_m2Size_c == _mSize_c) {
+#pragma omp parallel for
             for (size_t j = 0; j < _mSize_c; ++j){
                 dst[i][j] *= Mat2[i][j];
             }
@@ -369,6 +373,7 @@ namespace ubzx {
                 std::cerr << "in Dot,if col_size is not equal,then second Mat.col_size need equal 1.\n";
                 return Matrix();
             }
+#pragma omp parallel for
             for (i = 0; i < _mSize_r; ++i) {
                 for (size_t j = 0; j < _mSize_c; ++j){
                     dst[i][j] *= Mat2[i][0];
@@ -388,6 +393,7 @@ namespace ubzx {
         std::tie(_mSize_r, _mSize_c) = Mat.shape();
         Matrix dst(Mat);
         size_t i = 0, j = 0;
+#pragma omp parallel for
         for (i = 0; i < _mSize_r; ++i) {
             for(size_t j = 0;j<_mSize_c;++j){
                 dst[i][j] *= num;
@@ -682,7 +688,7 @@ namespace ubzx {
                 }
                 else {
                     tmp = (std::to_string(this->Mat[i][j]));
-                    tmp.resize(12);
+                    tmp.resize(12,'0');
                     res +=  tmp;
                 }
                 res += "   ";
@@ -764,6 +770,7 @@ namespace ubzx {
         }
         else{
             res = Matrix(_mSize_c,_mSize_r);
+#pragma omp parallel for
             for (size_t i = 0; i < _mSize_r; ++i) {
                 for (size_t  j = 0; j < _mSize_c; ++j) {
                     res[j][i] = Mat[i][j];
@@ -1488,6 +1495,7 @@ namespace ubzx {
             max_row_index = i;
 
             for (; current_col < _mSize_c; ++current_col) {
+#pragma omp parallel for
                 for (size_t m = i; m < _mSize_r; ++m) {
                     if (abs(U[max_row_index][current_col]) < abs(U[m][current_col])) {
                         max_row_index = m;
@@ -1509,6 +1517,7 @@ namespace ubzx {
             }
 
             //U中 i列下方元素变为0；
+#pragma omp parallel for
             for (size_t j = i + 1; j < _mSize_r; ++j) {
                 ele = U[j][current_col] / U[i][current_col];
                 size_t k = current_col;
@@ -1517,7 +1526,7 @@ namespace ubzx {
                     ++k;
                 }
             }
-
+#pragma omp parallel for
             for(size_t j = 0; j < i;++j){
                 ele = U[j][current_col] / U[i][current_col];
                 size_t k = current_col;
@@ -1528,6 +1537,7 @@ namespace ubzx {
             }
 
             ele_s = 1.0/U[i][current_col];
+#pragma omp parallel for
             for(size_t j =current_col;j<_mSize_c;++j){
                 U[i][j] *=ele_s;
             }

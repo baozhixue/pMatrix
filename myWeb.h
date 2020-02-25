@@ -201,7 +201,7 @@ namespace ubzx {
         std::stringstream read_buf;
         read_buf << inFile.rdbuf();
         read_content = read_buf.str();
-        read_content = (read_content + "<br>" + responseMat_and_Html(command,Mat));
+        read_content = (read_content + "\n" + responseMat_and_Html(command,Mat));
         size_t read_content_size = read_content.size();
         response_content = response_header_succes(read_content_size);
         write(sockConn, response_content.c_str(), response_content.size());
@@ -217,28 +217,28 @@ namespace ubzx {
         std::string ans = "";
         if (command == "Inverse") {
             Matrix  res = ubzx::Inverse(Mat);
-            ans = command +"<br>"+ res.to_str();
+            ans = command +"\n"+ res.to_str();
         }
         else if (command == "LU") {
             Matrix L, U;
             std::tie(L, U) = ubzx::LU(Mat);
-            ans = command + "<br>" + "L:<br>" + L.to_str() + "<br>U:<br>" + U.to_str();
+            ans = command + "\n" + "L:\n" + L.to_str() + "\nU:\n" + U.to_str();
         }
         else if (command == "Adjoint")
         {
             Matrix A;
             A = ubzx::Adjoint(Mat);
-            ans = command + "<br>" + "Adjoint Matrix:<br>" + A.to_str();
+            ans = command + "\n" + "Adjoint Matrix:\n" + A.to_str();
         }
         else if (command == "QR") {
             Matrix Q, R;
             std::tie(Q, R) = ubzx::QR(Mat);
-            ans = command + "<br>" + "Q:<br>" + Q.to_str() + "<br>R:<br>" + R.to_str();
+            ans = command + "\n" + "Q:\n" + Q.to_str() + "\nR:\n" + R.to_str();
         }
         else if (command == "PLU") {
             Matrix P,L, U;
             std::tie(P,L, U) = ubzx::PLU(Mat);
-            ans = command + "<br>" + "P:<br>" + P.to_str()+ "L:<br>" + L.to_str() + "<br>U:<br>" + U.to_str();
+            ans = command + "\n" + "P:\n" + P.to_str()+ "L:\n" + L.to_str() + "\nU:\n" + U.to_str();
         }
         return ans;
     }
