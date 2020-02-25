@@ -658,7 +658,7 @@ namespace ubzx {
 
         size_t _mSize_r, _mSize_c;
         std::tie(_mSize_r, _mSize_c) = this->shape();
-        std::string ZERO = "      0     ";
+        std::string ZERO = "   0   ";
         std::string tmp;
         res += "[";
         for (size_t i = 0; i < _mSize_r; ++i) {
@@ -672,7 +672,7 @@ namespace ubzx {
                 }
                 else {
                     tmp = (std::to_string(this->Mat[i][j]));
-                    tmp.resize(12,'0');
+                    tmp.resize(7,'0');
                     res +=  tmp;
                 }
                 res += "   ";
