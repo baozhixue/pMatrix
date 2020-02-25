@@ -163,7 +163,6 @@ namespace ubzx {
         read_content = read_buf.str();
         size_t read_content_size = read_content.size();
         response_content = response_header_succes(read_content_size);
-        response_content = response_content + "<br></textarea><br><a href=\"http://beian.miit.gov.cn/\" target=\"_blank\" style=\"position:center; position: absolute\">√…ICP±∏20000547∫≈-1</a>";
         write(sockConn, response_content.c_str(), response_content.size());
         write(sockConn, read_content.c_str(), read_content.size());
         return true;
@@ -202,8 +201,7 @@ namespace ubzx {
         std::stringstream read_buf;
         read_buf << inFile.rdbuf();
         read_content = read_buf.str();
-        read_content = (read_content + "<br>" + responseMat_and_Html(command,Mat) + "<br></textarea><br><a href=\"http://beian.miit.gov.cn/\" target=\"_blank\" style=\"position:center; position: absolute\">√…ICP±∏20000547∫≈-1</a>"
-                );
+        read_content = (read_content + "<br>" + responseMat_and_Html(command,Mat));
         size_t read_content_size = read_content.size();
         response_content = response_header_succes(read_content_size);
         write(sockConn, response_content.c_str(), response_content.size());
