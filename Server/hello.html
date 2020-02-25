@@ -3,7 +3,7 @@
     var Week, Weekday;
     var date =  new Date();
     
-    Week = ["æ˜ŸæœŸå¤©", "æ˜ŸæœŸä¸€", "æ˜ŸæœŸäºŒ", "æ˜ŸæœŸä¸‰", "æ˜ŸæœŸå››", "æ˜ŸæœŸäº”", "æ˜ŸæœŸå…­"];
+    Week = ["ÐÇÆÚÌì", "ÐÇÆÚÒ»", "ÐÇÆÚ¶þ", "ÐÇÆÚÈý", "ÐÇÆÚËÄ", "ÐÇÆÚÎå", "ÐÇÆÚÁù"];
     Weekday = date.getDay();
     
     year = date.getFullYear();
@@ -13,7 +13,7 @@
     minutes = date.getMinutes();
     seconds = date.getSeconds();
     
-    document.getElementById("getTime").innerHTML = year + "å¹´" + month + "æœˆ" + day + "æ—¥" + "\t" + hours + ":" + minutes + ":" + seconds + "\t" + Week[Weekday];
+    document.getElementById("getTime").innerHTML = year + "Äê" + month + "ÔÂ" + day + "ÈÕ" + "\t" + hours + ":" + minutes + ":" + seconds + "\t" + Week[Weekday];
 
     };
 </script>
@@ -46,16 +46,17 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        textarea select{
+        textarea{
             width: 100%;
-            background-color: #4CAF50;
-            color: white;
+            color:black;
             padding: 14px 20px;
             margin: 8px 0;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size:larger;
         }
+
     </style>
 
     <div id="getTime" style="float: left;
@@ -73,7 +74,7 @@
     <h1> Welcome to baozhixue's first web!</h1>
     <form action="/matrix" method="post">
         Matrix:<br>
-        <input type="number" name="r" required="required" style="height:50px;width:100px;">
+        <input type="number" name="r" required="required" style="height:50px;width:100px">
         <input type="number" name="r" required="required" style="height:50px;width:100px">
         <input type="number" name="r" required="required" style="height:50px;width:100px"> <br>
         <input type="number" name="r" required="required" style="height:50px;width:100px">
@@ -88,16 +89,15 @@
         <input type="submit" value="PLU" name="PLU" style="height:30px;width:70px">
         <input type="submit" value="QR" name="QR" style="height:30px;width:70px">
         <input type="submit" value="Adjoint" name="Adjoint" style="height:30px;width:70px"> <br />
-        <!--<br>
-    <textarea name="message" rows="30" cols="30" style="height:300px;width:300px">
-    </textarea>
-    <br><br>
-    <input type="submit" value="æäº¤" style="height:30px;width:70px">-->
 
     </form>
     
-   
 </body>
 </html >
 
-<form style='color:red;' >
+<textarea cols="3" rows="3" style="width:500px;height:500px;border:hidden" readonly ="readonly" >
+
+
+
+
+
